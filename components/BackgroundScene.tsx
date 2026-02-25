@@ -6,8 +6,6 @@ import { useEffect, useRef, useState } from 'react';
 const VIDEO_PLAYLIST = [
   '/v1.mp4',
   '/v2.mp4',
-  '/v3.mp4',
-  '/v4.mp4',
   '/v5.mp4',
 
   // Add more videos as needed
@@ -28,10 +26,10 @@ export default function BackgroundScene() {
       // Only transition if we have multiple videos
       if (VIDEO_PLAYLIST.length > 1) {
         setIsTransitioning(true);
-        
+
         // Wait for fade out, then change video
         setTimeout(() => {
-          setCurrentVideoIndex((prevIndex) => 
+          setCurrentVideoIndex((prevIndex) =>
             (prevIndex + 1) % VIDEO_PLAYLIST.length
           );
           setIsTransitioning(false);
@@ -88,9 +86,9 @@ export default function BackgroundScene() {
   }, [currentVideoIndex]);
 
   return (
-    <div 
-      className="fixed inset-0 w-full h-full background-scene overflow-hidden" 
-      style={{ 
+    <div
+      className="fixed inset-0 w-full h-full background-scene overflow-hidden"
+      style={{
         zIndex: 0,
         background: '#000000',
       }}
@@ -113,7 +111,7 @@ export default function BackgroundScene() {
         </video>
 
         {/* Gradient Overlay - Top to Bottom */}
-        <div 
+        <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background: 'linear-gradient(180deg, rgba(10, 13, 26, 0.85) 0%, rgba(2, 4, 8, 0.4) 40%, rgba(2, 4, 8, 0.7) 100%)',
@@ -121,7 +119,7 @@ export default function BackgroundScene() {
         />
 
         {/* Vignette Effect */}
-        <div 
+        <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.4) 100%)',
@@ -129,7 +127,7 @@ export default function BackgroundScene() {
         />
 
         {/* Subtle Blue Tint Overlay */}
-        <div 
+        <div
           className="absolute inset-0 pointer-events-none mix-blend-overlay"
           style={{
             background: 'linear-gradient(135deg, rgba(68, 136, 255, 0.08) 0%, rgba(51, 102, 255, 0.12) 100%)',
@@ -137,7 +135,7 @@ export default function BackgroundScene() {
         />
 
         {/* Animated Gradient Accent */}
-        <div 
+        <div
           className="absolute inset-0 pointer-events-none opacity-30"
           style={{
             background: 'linear-gradient(45deg, transparent 0%, rgba(68, 136, 255, 0.1) 50%, transparent 100%)',
@@ -191,8 +189,8 @@ export default function BackgroundScene() {
                 width: currentVideoIndex === index ? '32px' : '8px',
                 height: '8px',
                 borderRadius: '4px',
-                background: currentVideoIndex === index 
-                  ? 'rgba(68, 136, 255, 0.8)' 
+                background: currentVideoIndex === index
+                  ? 'rgba(68, 136, 255, 0.8)'
                   : 'rgba(68, 136, 255, 0.3)',
               }}
             />

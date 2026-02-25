@@ -30,21 +30,47 @@ export default function Navbar() {
       if (data) setStoreId(data.id.toString());
     };
 
+    const checkUserExists = async (userId: string): Promise<boolean> => {
+      const { data } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
+      return !!data;
+    };
+
     // Use getSession (reads from cookies/storage, no API call) for immediate check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
+        // Vérifier que l'utilisateur existe toujours dans public.users
+        const exists = await checkUserExists(session.user.id);
+        if (!exists) {
+          await supabase.auth.signOut();
+          setUser(null);
+          setStoreId(null);
+          return;
+        }
+        setUser(session.user);
         const role = session.user.user_metadata?.role;
         if (role === 'business_owner' || role === 'PRO') {
           fetchStoreId(session.user.id);
         }
+      } else {
+        setUser(null);
       }
     });
 
     // Listen for real-time auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
+        const exists = await checkUserExists(session.user.id);
+        if (!exists) {
+          await supabase.auth.signOut();
+          setUser(null);
+          setStoreId(null);
+          return;
+        }
+        setUser(session.user);
         const role = session.user.user_metadata?.role;
         if (role === 'business_owner' || role === 'PRO') {
           fetchStoreId(session.user.id);
@@ -52,6 +78,7 @@ export default function Navbar() {
           setStoreId(null);
         }
       } else {
+        setUser(null);
         setStoreId(null);
       }
     });

@@ -34,7 +34,28 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Si l'utilisateur est connecté, vérifier qu'il existe toujours dans public.users
+  if (user) {
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', user.id)
+      .single()
+
+    // Si le profil n'existe plus, déconnecter et rediriger vers l'accueil
+    if (!profile) {
+      await supabase.auth.signOut()
+      const redirectUrl = new URL('/', request.url)
+      const redirectResponse = NextResponse.redirect(redirectUrl)
+      // Copier les cookies de déconnexion vers la réponse de redirection
+      response.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+      })
+      return redirectResponse
+    }
+  }
 
   return response
 }

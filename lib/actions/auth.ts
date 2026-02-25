@@ -54,7 +54,7 @@ export async function signup(formData: FormData) {
             error: "Passwords do not match"
         }
     }
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -66,6 +66,22 @@ export async function signup(formData: FormData) {
             error: error.message
         }
     }
+
+    // Insérer l'utilisateur dans public.users avec son email et rôle CLIENT
+    if (signUpData.user) {
+        const { error: userInsertError } = await supabase
+            .from('users')
+            .upsert({
+                id: signUpData.user.id,
+                full_name: data.email,
+                role: 'CLIENT',
+            })
+
+        if (userInsertError) {
+            console.error('Error inserting user into public.users:', userInsertError)
+        }
+    }
+
     revalidatePath('/', 'layout')
     return {
         success: true,
