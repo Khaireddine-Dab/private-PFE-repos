@@ -30,47 +30,21 @@ export default function Navbar() {
       if (data) setStoreId(data.id.toString());
     };
 
-    const checkUserExists = async (userId: string): Promise<boolean> => {
-      const { data } = await supabase
-        .from('users')
-        .select('id')
-        .eq('id', userId)
-        .maybeSingle();
-      return !!data;
-    };
-
     // Use getSession (reads from cookies/storage, no API call) for immediate check
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
       if (session?.user) {
-        // Vérifier que l'utilisateur existe toujours dans public.users
-        const exists = await checkUserExists(session.user.id);
-        if (!exists) {
-          await supabase.auth.signOut();
-          setUser(null);
-          setStoreId(null);
-          return;
-        }
-        setUser(session.user);
         const role = session.user.user_metadata?.role;
         if (role === 'business_owner' || role === 'PRO') {
           fetchStoreId(session.user.id);
         }
-      } else {
-        setUser(null);
       }
     });
 
     // Listen for real-time auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
       if (session?.user) {
-        const exists = await checkUserExists(session.user.id);
-        if (!exists) {
-          await supabase.auth.signOut();
-          setUser(null);
-          setStoreId(null);
-          return;
-        }
-        setUser(session.user);
         const role = session.user.user_metadata?.role;
         if (role === 'business_owner' || role === 'PRO') {
           fetchStoreId(session.user.id);
@@ -78,7 +52,6 @@ export default function Navbar() {
           setStoreId(null);
         }
       } else {
-        setUser(null);
         setStoreId(null);
       }
     });
@@ -115,12 +88,17 @@ export default function Navbar() {
     <header className="fixed top-0 left-0 right-0 z-50">
       {/* Glass container */}
       <div >
-        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-6">
+        <div className="max-w-7xl mx-auto px-6 flex items-center gap-6 h-16">
 
-          {/* Logo */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-              <img src="/logo1.png" alt="Platform Logo" className="h-12 w-auto object-contain" />
+          {/* Logo — oversized intentionally, clipped by the h-16 row */}
+          <div className="flex items-center flex-shrink-0 h-full overflow-visible">
+            <Link href="/" className="flex items-center hover:opacity-90 transition-opacity">
+              <img
+                src="/ro2ya_logo1.png"
+                alt="Platform Logo"
+                className="h-36 w-36 object-contain"
+                style={{ filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.35)) drop-shadow(0 0 22px rgba(239,68,68,0.3))' }}
+              />
             </Link>
           </div>
 
@@ -132,7 +110,7 @@ export default function Navbar() {
                 <Search className="w-4 h-4 text-white/60" />
                 <input
                   type="text"
-                  placeholder="restaurants, cafes, bars..."
+                  placeholder="restaurants, cafes, hotels..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-transparent outline-none text-sm text-white placeholder-white/50"
@@ -236,4 +214,3 @@ export default function Navbar() {
     </header>
   );
 }
-

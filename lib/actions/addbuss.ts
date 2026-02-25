@@ -92,7 +92,6 @@ export async function addBusiness(formData: FormData) {
         .from('users')
         .upsert({
             id: user.id,
-            full_name: user.email,
             role: 'PRO',
             updated_at: new Date().toISOString()
         })

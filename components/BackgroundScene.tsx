@@ -4,9 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 
 // Add your video playlist here
 const VIDEO_PLAYLIST = [
-  '/v1.mp4',
-  '/v2.mp4',
-  '/v5.mp4',
+  '/1.mp4',
 
   // Add more videos as needed
 ];
@@ -23,25 +21,19 @@ export default function BackgroundScene() {
     if (!video) return;
 
     const handleVideoEnd = () => {
-      // Only transition if we have multiple videos
       if (VIDEO_PLAYLIST.length > 1) {
         setIsTransitioning(true);
-
-        // Wait for fade out, then change video
         setTimeout(() => {
           setCurrentVideoIndex((prevIndex) =>
             (prevIndex + 1) % VIDEO_PLAYLIST.length
           );
           setIsTransitioning(false);
-        }, 500); // Match this with CSS transition duration
+        }, 500);
       }
     };
 
     video.addEventListener('ended', handleVideoEnd);
-
-    return () => {
-      video.removeEventListener('ended', handleVideoEnd);
-    };
+    return () => video.removeEventListener('ended', handleVideoEnd);
   }, []);
 
   // Handle video playback
@@ -49,22 +41,19 @@ export default function BackgroundScene() {
     const video = videoRef.current;
     if (!video) return;
 
-    // Reset and load new video
-    video.load();
+    let cancelled = false;
 
     const playVideo = async () => {
+      if (cancelled) return;
       try {
         await video.play();
-        setIsLoaded(true);
+        if (!cancelled) setIsLoaded(true);
       } catch (error) {
         console.log('Autoplay prevented:', error);
-        // Fallback: try playing on user interaction
         const playOnInteraction = async () => {
           try {
             await video.play();
-            setIsLoaded(true);
-            document.removeEventListener('click', playOnInteraction);
-            document.removeEventListener('touchstart', playOnInteraction);
+            if (!cancelled) setIsLoaded(true);
           } catch (err) {
             console.error('Could not play video:', err);
           }
@@ -74,29 +63,32 @@ export default function BackgroundScene() {
       }
     };
 
+    // Using src prop directly means the browser picks up the new source
+    // automatically on re-render; we just need to trigger load + play.
+    video.load();
+    video.addEventListener('canplaythrough', playVideo, { once: true });
+
+    // Fallback: if already buffered enough, play immediately
     if (video.readyState >= 3) {
       playVideo();
-    } else {
-      video.addEventListener('canplay', playVideo, { once: true });
     }
 
     return () => {
-      video.removeEventListener('canplay', playVideo);
+      cancelled = true;
+      video.removeEventListener('canplaythrough', playVideo);
     };
   }, [currentVideoIndex]);
 
   return (
     <div
-      className="fixed inset-0 w-full h-full background-scene overflow-hidden"
-      style={{
-        zIndex: 0,
-        background: '#000000',
-      }}
+      className="fixed inset-0 w-full h-full background-scene overflow-hidden z-0"
+      style={{ background: '#000000' }}
     >
       {/* Video Background */}
       <div className="absolute inset-0 w-full h-full">
         <video
           ref={videoRef}
+          src={VIDEO_PLAYLIST[currentVideoIndex]}
           className="absolute inset-0 w-full h-full object-cover"
           style={{
             opacity: isLoaded && !isTransitioning ? 1 : 0,
@@ -105,10 +97,9 @@ export default function BackgroundScene() {
           autoPlay
           muted
           playsInline
+          loop={VIDEO_PLAYLIST.length === 1}
           preload="auto"
-        >
-          <source src={VIDEO_PLAYLIST[currentVideoIndex]} type="video/mp4" />
-        </video>
+        />
 
         {/* Gradient Overlay - Top to Bottom */}
         <div
@@ -154,7 +145,7 @@ export default function BackgroundScene() {
         </div>
       )}
 
-      {/* Animated Particles Overlay (Optional) */}
+      {/* Animated Particles Overlay */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
         <div className="particle-container">
           {[...Array(30)].map((_, i) => (
@@ -178,7 +169,7 @@ export default function BackgroundScene() {
         </div>
       </div>
 
-      {/* Video Progress Indicator (Optional) */}
+      {/* Video Progress Indicator */}
       {VIDEO_PLAYLIST.length > 1 && (
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-2 pointer-events-none z-10">
           {VIDEO_PLAYLIST.map((_, index) => (
@@ -199,7 +190,7 @@ export default function BackgroundScene() {
       )}
 
       {/* CSS Animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes gradientShift {
           0%, 100% {
             opacity: 0.3;
@@ -216,14 +207,10 @@ export default function BackgroundScene() {
             transform: translateY(0) translateX(0);
             opacity: 0;
           }
-          10% {
-            opacity: 0.8;
-          }
-          90% {
-            opacity: 0.8;
-          }
+          10% { opacity: 0.8; }
+          90% { opacity: 0.8; }
           100% {
-            transform: translateY(-100vh) translateX(${Math.random() > 0.5 ? '' : '-'}${Math.random() * 50}px);
+            transform: translateY(-100vh) translateX(20px);
             opacity: 0;
           }
         }
