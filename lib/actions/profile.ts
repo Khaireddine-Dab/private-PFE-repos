@@ -63,6 +63,20 @@ export async function getOwnerProfileData(businessId?: number | string) {
        console.error("Error fetching store data:", storeError)
     }
 
+    // 3.1 Fetch map data from directory if linked
+    if (storeData?.id_business) {
+        const { data: dirData } = await supabase
+            .from('business_directory_tunisia' as any)
+            .select('url, place_id')
+            .eq('id', storeData.id_business)
+            .maybeSingle();
+        
+        if (dirData) {
+            storeData.google_maps_url = (dirData as any).url;
+            storeData.place_id = (dirData as any).place_id;
+        }
+    }
+
     // 4. Fetch metrics (derived or direct from store)
     let reviewsCount = 0;
     let avgRating = 0;

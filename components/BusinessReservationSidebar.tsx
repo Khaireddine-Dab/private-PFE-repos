@@ -26,6 +26,7 @@ interface Props {
   isLinkedToStore?: boolean;
   hasProducts?: boolean;
   items?: Item[];
+  isOwner?: boolean;
 }
 
 export default function BusinessReservationSidebar({
@@ -40,6 +41,7 @@ export default function BusinessReservationSidebar({
   isLinkedToStore = true,
   hasProducts = false,
   items = [],
+  isOwner = false,
 }: Props) {
   const [showReservation, setShowReservation] = useState(false);
   const [confirmedData,   setConfirmedData]   = useState<ReservationData | null>(null);
@@ -146,29 +148,42 @@ export default function BusinessReservationSidebar({
               Envoyer un message
             </button>
 
-            {isLinkedToStore && (
-              <button
-                type="button"
-                onClick={() => {
-                  setShowReservation(!showReservation);
-                }}
-                className={`w-full font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all border-2 active:scale-[0.98] ${
-                  showReservation
-                    ? 'bg-slate-100 border-slate-200 text-slate-700'
-                    : 'bg-white border-gray-200 text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                {showReservation ? <><X className="w-4 h-4" /> Fermer</> : 'Réserver'}
-              </button>
-            )}
+            {isOwner ? (
+                <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl flex flex-col items-center justify-center text-center space-y-2 w-full mt-4">
+                  <span className="text-orange-600 font-bold text-sm uppercase tracking-widest">Action impossible</span>
+                  <span className="text-orange-500 text-xs font-semibold px-2 leading-relaxed">
+                    Vous ne pouvez pas effectuer de commande ou réservation sur votre propre établissement.
+                  </span>
+                </div>
+            ) : (
+              <>
+                {isLinkedToStore && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowReservation(!showReservation);
+                    }}
+                    className={`w-full font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all border-2 active:scale-[0.98] mt-4 ${
+                      showReservation
+                        ? 'bg-slate-100 border-slate-200 text-slate-700'
+                        : 'bg-white border-gray-200 text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
+                    {showReservation ? <><X className="w-4 h-4" /> Fermer</> : 'Réserver'}
+                  </button>
+                )}
 
-            {hasProducts && (
-              <BusinessCommandSidebar
-                businessName={businessName}
-                items={items}
-                storeId={items[0]?.store_id}
-                isLinkedToStore={isLinkedToStore}
-              />
+                {hasProducts && (
+                  <div className="mt-4">
+                    <BusinessCommandSidebar
+                      businessName={businessName}
+                      items={items}
+                      storeId={items[0]?.store_id}
+                      isLinkedToStore={isLinkedToStore}
+                    />
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

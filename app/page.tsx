@@ -11,7 +11,6 @@ import Offers from '@/components/Offers';
 import { CommerceHero } from '@/components/commerce-hero';
 import { LogoCarouselDemo } from "@/components/ui/testimonials"
 import { FloatingAiAssistant } from "@/components/ui/glowing-ai-chat-assistant"
-import ShortAdsSection from '@/components/ShortAdsSection';
 import SnapchatReels from '@/components/SnapchatReels';
 const BackgroundScene = dynamic(
   () => import('@/components/BackgroundScene'),

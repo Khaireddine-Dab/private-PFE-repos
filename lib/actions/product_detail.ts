@@ -38,6 +38,7 @@ export interface ProductDetail {
     total_reviews: number;
     opening_hours: Record<string, { open: string; close: string; closed: boolean }> | null;
     verified_at: string | null;
+    owner_id: string;
   };
 }
 
@@ -96,7 +97,8 @@ export async function getProductById(id: number): Promise<ProductDetail | null> 
         rating_average,
         total_reviews,
         opening_hours,
-        verified_at
+        verified_at,
+        owner_id
       )
     `)
     .eq('id', id)
@@ -135,7 +137,8 @@ export async function getProductById(id: number): Promise<ProductDetail | null> 
         rating_average: 0,
         total_reviews: 0,
         opening_hours: null,
-        verified_at: null
+        verified_at: null,
+        owner_id: ''
     },
   } as ProductDetail;
 }

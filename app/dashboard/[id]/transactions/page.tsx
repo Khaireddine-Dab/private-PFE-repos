@@ -1,12 +1,12 @@
 'use client';
 
 import React from 'react';
-import { getStoreTransactions, Transaction } from '@/lib/actions/transactions';
+import { getStoreTransactions, Transaction, getOwnerPersonalTransactions, PersonalTransaction } from '@/lib/actions/transactions';
 import { useParams } from 'next/navigation';
 import { 
   Loader2, Search, Filter, ShieldCheck, CreditCard, 
   Calendar, ArrowRight, TrendingUp, Info, MoreVertical, 
-  CheckCircle, XCircle, Clock, Download, ChevronLeft, ChevronRight 
+  CheckCircle, XCircle, Clock, Download, ChevronLeft, ChevronRight, Store, ShoppingBag 
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -19,6 +19,7 @@ import { updateBookingStatus } from '@/lib/actions/reservation';
 import { updateOrderStatus } from '@/lib/actions/leads';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { createClient } from '@/lib/supabase/client';
 
 const statusColors: Record<string, string> = {
   completed: 'bg-green-500/10 text-green-500 border-green-500/20',
@@ -62,6 +63,10 @@ export default function TransactionsPage() {
   const [selectedTxn, setSelectedTxn] = React.useState<Transaction | null>(null);
   const [isScannerOpen, setIsScannerOpen] = React.useState(false);
   const [isUpdating, setIsUpdating] = React.useState(false);
+
+  const [activeTab, setActiveTab] = React.useState<'store' | 'personal'>('store');
+  const [personalTransactions, setPersonalTransactions] = React.useState<PersonalTransaction[]>([]);
+  const [isLoadingPersonal, setIsLoadingPersonal] = React.useState(false);
 
   const handleStatusUpdate = async (newStatus: 'completed' | 'cancelled' | 'failed') => {
     if (!selectedTxn) return;
@@ -114,6 +119,25 @@ export default function TransactionsPage() {
     fetchData();
   }, [storeId]);
 
+  React.useEffect(() => {
+    async function fetchPersonal() {
+      setIsLoadingPersonal(true);
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) {
+          const data = await getOwnerPersonalTransactions(user.id);
+          setPersonalTransactions(data);
+        }
+      } catch (e) {
+        console.error('Failed to fetch personal transactions', e);
+      } finally {
+        setIsLoadingPersonal(false);
+      }
+    }
+    fetchPersonal();
+  }, []);
+
   const filteredTransactions = React.useMemo(() => {
     return transactions.filter(txn => {
       const q = searchQuery.toLowerCase();
@@ -162,22 +186,57 @@ export default function TransactionsPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: 'Transactions', value: filteredTransactions.length, sub: 'Au total', color: 'text-foreground' },
-          { label: 'Revenu Réel', value: `${totalRevenue.toLocaleString()} DT`, sub: `${filteredTransactions.filter(t => t.status === 'completed').length} validées`, color: 'text-green-500' },
-          { label: 'En attente', value: filteredTransactions.filter(t => t.status === 'pending').length, sub: 'À traiter', color: 'text-yellow-500' },
-          { label: 'Commissions', value: `${totalCommission.toLocaleString()} DT`, sub: 'Frais Ro2ya 10%', color: 'text-foreground' },
-        ].map(({ label, value, sub, color }) => (
-          <Card key={label} className="p-4">
-            <div className="text-xs text-muted-foreground">{label}</div>
-            <div className={`text-2xl font-bold mt-1 ${color}`}>{value}</div>
-            <div className="text-xs text-muted-foreground mt-1">{sub}</div>
-          </Card>
-        ))}
+      {/* Tab Switcher */}
+      <div className="flex items-center gap-2 border-b border-border pb-0">
+        <button
+          onClick={() => setActiveTab('store')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors -mb-[1px] ${
+            activeTab === 'store'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Store className="w-4 h-4" />
+          Transactions de ma boutique
+        </button>
+        <button
+          onClick={() => setActiveTab('personal')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors -mb-[1px] ${
+            activeTab === 'personal'
+              ? 'border-indigo-500 text-indigo-600'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <ShoppingBag className="w-4 h-4" />
+          Mes Achats Personnels
+          {personalTransactions.length > 0 && (
+            <span className="ml-1 bg-indigo-100 text-indigo-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+              {personalTransactions.length}
+            </span>
+          )}
+        </button>
       </div>
 
-      <Card className="p-5 space-y-4">
+      {activeTab === 'store' && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: 'Transactions', value: filteredTransactions.length, sub: 'Au total', color: 'text-foreground' },
+            { label: 'Revenu Réel', value: `${totalRevenue.toLocaleString()} DT`, sub: `${filteredTransactions.filter(t => t.status === 'completed').length} validées`, color: 'text-green-500' },
+            { label: 'En attente', value: filteredTransactions.filter(t => t.status === 'pending').length, sub: 'À traiter', color: 'text-yellow-500' },
+            { label: 'Commissions', value: `${totalCommission.toLocaleString()} DT`, sub: 'Frais Ro2ya 10%', color: 'text-foreground' },
+          ].map(({ label, value, sub, color }) => (
+            <Card key={label} className="p-4">
+              <div className="text-xs text-muted-foreground">{label}</div>
+              <div className={`text-2xl font-bold mt-1 ${color}`}>{value}</div>
+              <div className="text-xs text-muted-foreground mt-1">{sub}</div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {activeTab === 'store' && (
+        <>
+        <Card className="p-5 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <FilterSelect label="Type" value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }}>
             <option value="">Tous les types</option>
@@ -260,8 +319,14 @@ export default function TransactionsPage() {
                       {txn.type === 'order' ? 'PRODUIT' : 'SERVICE'}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-foreground text-sm">
-                    {txn.customer_name}
+                  <td className="px-6 py-4 whitespace-nowrap text-foreground text-sm flex items-center gap-2">
+                    <span className="truncate max-w-[150px]">{txn.customer_name}</span>
+                    {txn.is_business_owner && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 uppercase tracking-widest border border-indigo-200" title="Ce client est un propriétaire de boutique">
+                        <Store className="w-3 h-3" />
+                        Pro
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-muted-foreground text-sm">
                     {txn.details}
@@ -309,6 +374,70 @@ export default function TransactionsPage() {
           </div>
         </div>
       </Card>
+      </>
+      )}
+
+      {/* Personal Purchases Tab */}
+      {activeTab === 'personal' && (
+        <Card className="overflow-hidden">
+          <div className="p-4 border-b border-border flex items-center gap-3">
+            <div className="bg-indigo-100 p-2 rounded-lg">
+              <ShoppingBag className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="font-bold text-foreground text-sm">Vos achats en tant que client</h2>
+              <p className="text-xs text-muted-foreground">Commandes et réservations que vous avez passées dans d'autres boutiques</p>
+            </div>
+          </div>
+          {isLoadingPersonal ? (
+            <div className="p-8 flex items-center gap-2 text-muted-foreground text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" /> Chargement...
+            </div>
+          ) : personalTransactions.length === 0 ? (
+            <div className="p-12 text-center text-muted-foreground text-sm">
+              <ShoppingBag className="w-10 h-10 mx-auto mb-3 opacity-20" />
+              Vous n'avez encore effectué aucun achat en tant que client.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[700px]">
+                <thead className="bg-indigo-50/50 border-b border-border">
+                  <tr>
+                    {['Date', 'Référence', 'Type', 'Boutique', 'Détails', 'Montant', 'Statut'].map(col => (
+                      <th key={col} className="px-6 py-3 text-left text-xs font-semibold text-indigo-700 whitespace-nowrap uppercase tracking-wider">{col}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {personalTransactions.map(txn => (
+                    <tr key={txn.id} className="hover:bg-indigo-50/30 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-muted-foreground text-sm">
+                        {format(new Date(txn.created_at), 'dd MMM yyyy', { locale: fr })}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap font-bold text-foreground text-sm">{txn.reference}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge variant="outline" className="text-[10px] uppercase font-bold border-indigo-200 text-indigo-600 bg-indigo-50">
+                          {txn.type === 'order' ? 'PRODUIT' : 'SERVICE'}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-foreground text-sm font-semibold">{txn.store_name}</td>
+                      <td className="px-6 py-4 text-muted-foreground text-sm">{txn.details}</td>
+                      <td className="px-6 py-4 whitespace-nowrap font-extrabold text-foreground text-sm">
+                        {txn.amount.toLocaleString()} DT
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge className={`text-[10px] font-bold uppercase border ${statusColors[txn.status] || ''}`}>
+                          {txn.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
 
       <Dialog open={!!selectedTxn} onOpenChange={(open) => { if (!open) setSelectedTxn(null); }}>
         <DialogContent className="sm:max-w-md border-border bg-card">

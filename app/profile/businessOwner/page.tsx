@@ -22,6 +22,7 @@ import { getOwnerProfileData } from '@/lib/actions/profile';
 import { sendPasswordResetEmail } from '@/lib/actions/auth';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import StoreLocationMap from '@/components/StoreLocationMap';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function StarRow({ rating }: { rating: number }) {
@@ -144,6 +145,8 @@ export default function BusinessOwnerProfile() {
         { day: 'Mon-Sun', hours: 'N/A' }
     ],
     coords: { lat: store.latitude ? `${store.latitude}° N` : 'N/A', lng: store.longitude ? `${store.longitude}° E` : 'N/A' },
+    googleMapsUrl: store.google_maps_url,
+    placeId: store.place_id,
   } : null;
 
   const metrics = [
@@ -727,13 +730,17 @@ export default function BusinessOwnerProfile() {
                 <MapPin className="w-4 h-4 text-red-600" /> Map Location
               </h3>
 
-              {/* Real OpenStreetMap embed */}
+              {/* Real Google Maps via StoreLocationMap */}
               {store?.latitude && store?.longitude ? (
-                <iframe
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${store.longitude - 0.005},${store.latitude - 0.005},${store.longitude + 0.005},${store.latitude + 0.005}&layer=mapnik&marker=${store.latitude},${store.longitude}`}
-                  className="w-full h-40 rounded-xl border border-border mb-3"
-                  title="Store Location"
-                />
+                <div className="w-full h-40 rounded-xl border border-border mb-3 overflow-hidden">
+                  <StoreLocationMap
+                    lat={store.latitude}
+                    lng={store.longitude}
+                    businessName={business.name}
+                    googleMapsUrl={business.googleMapsUrl}
+                    placeId={business.placeId}
+                  />
+                </div>
               ) : (
                 <div className="h-40 rounded-xl bg-muted border border-border flex flex-col items-center justify-center gap-2 mb-3">
                   <MapPin className="w-8 h-8 text-muted-foreground/30" />

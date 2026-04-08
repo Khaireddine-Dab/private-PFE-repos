@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Item } from '@/lib/actions/items';
-import { Star, Package, ShoppingCart, Scale, Heart, Zap } from 'lucide-react';
+import { Star, Package, ShoppingCart, Scale, Heart, Zap, Lock } from 'lucide-react';
 import { useActionDrawer } from '@/hooks/useActionDrawer';
 
 interface ServiceCardProps {
@@ -28,6 +28,7 @@ interface ProductCardProps {
     onViewDetails?: () => void;
     onBuy?: () => void;
     hideBuyButton?: boolean;
+    isOwner?: boolean;
 }
 
 const categoryStyles: Record<string, { icon: string; color: string; tag: string }> = {
@@ -55,7 +56,7 @@ function Stars({ n }: { n: number }) {
     );
 }
 
-export function ProductCard({ item, businessName, compared, promotion, onCompare, onViewDetails, onBuy, hideBuyButton }: ProductCardProps) {
+export function ProductCard({ item, businessName, compared, promotion, onCompare, onViewDetails, onBuy, hideBuyButton, isOwner = false }: ProductCardProps) {
     const { openDrawer } = useActionDrawer();
     const [isWished, setIsWished] = useState(false);
     
@@ -187,7 +188,16 @@ export function ProductCard({ item, businessName, compared, promotion, onCompare
 
                 {/* Premium Footer Actions */}
                 <div className="flex gap-2.5 pt-4 border-t border-stone-50">
-                    {!hideBuyButton ? (
+                    {isOwner ? (
+                        <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-1 h-11 flex items-center justify-center gap-2 rounded-2xl bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed select-none"
+                            title="Vous ne pouvez pas acheter votre propre produit"
+                        >
+                            <Lock className="w-4 h-4" />
+                            <span className="text-[12px] font-black tracking-wider uppercase">Votre produit</span>
+                        </div>
+                    ) : !hideBuyButton ? (
                         <>
                             <button
                                 onClick={(e) => {

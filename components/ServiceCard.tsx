@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Item } from '@/lib/actions/items';
-import { Star, Calendar, Clock, Award, ShieldCheck, Heart, ArrowRight, Zap, Package, ShoppingCart, Scale } from 'lucide-react';
+import { Star, Calendar, Clock, Award, ShieldCheck, Heart, ArrowRight, Zap, Lock } from 'lucide-react';
 import { useActionDrawer } from '@/hooks/useActionDrawer';
 
 interface ServiceCardProps {
@@ -16,6 +16,7 @@ interface ServiceCardProps {
     onViewDetails?: () => void;
     hideBooking?: boolean;
     hidePricing?: boolean;
+    isOwner?: boolean;
 }
 
 function Stars({ n }: { n: number }) {
@@ -31,7 +32,7 @@ function Stars({ n }: { n: number }) {
     );
 }
 
-export function ServiceCard({ item, businessName, promotion, onBook, onViewDetails, hideBooking, hidePricing }: ServiceCardProps) {
+export function ServiceCard({ item, businessName, promotion, onBook, onViewDetails, hideBooking, hidePricing, isOwner = false }: ServiceCardProps) {
     const { openDrawer } = useActionDrawer();
     const [isWished, setIsWished] = useState(false);
 
@@ -188,7 +189,16 @@ export function ServiceCard({ item, businessName, promotion, onBook, onViewDetai
 
                 {/* Action Buttons */}
                 <div className="flex gap-2.5 pt-4">
-                    {!hideBooking && (
+                    {isOwner ? (
+                        <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-1 h-12 flex items-center justify-center gap-2 rounded-2xl bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed select-none"
+                            title="Vous ne pouvez pas réserver votre propre service"
+                        >
+                            <Lock className="w-4 h-4" />
+                            <span className="text-[12px] font-black tracking-wider uppercase">Votre service</span>
+                        </div>
+                    ) : !hideBooking ? (
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -201,19 +211,21 @@ export function ServiceCard({ item, businessName, promotion, onBook, onViewDetai
                             Réserver
                             <ArrowRight className="w-4 h-4 opacity-0 -translate-x-3 group-hover/btn:opacity-100 group-hover/btn:translate-x-0 transition-all duration-300" />
                         </button>
-                    )}
+                    ) : null}
 
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onViewDetails?.();
-                        }}
-                        className={`${hideBooking ? 'flex-1 h-12' : 'w-12 h-12'} flex items-center justify-center rounded-2xl bg-white border border-stone-100 text-stone-300 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-300 active:scale-95 shadow-sm`}
-                        title="Détails"
-                    >
-                        {hideBooking && <span className="mr-2 text-[13px] font-black tracking-widest uppercase text-stone-400">Détails</span>}
-                        <Clock className="w-5 h-5" />
-                    </button>
+                    {!isOwner && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onViewDetails?.();
+                            }}
+                            className={`${hideBooking ? 'flex-1 h-12' : 'w-12 h-12'} flex items-center justify-center rounded-2xl bg-white border border-stone-100 text-stone-300 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-300 active:scale-95 shadow-sm`}
+                            title="Détails"
+                        >
+                            {hideBooking && <span className="mr-2 text-[13px] font-black tracking-widest uppercase text-stone-400">Détails</span>}
+                            <Clock className="w-5 h-5" />
+                        </button>
+                    )}
                 </div>
             </div>
             

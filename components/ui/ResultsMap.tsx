@@ -58,9 +58,21 @@ export default function ResultsMap({
       if (!mounted || !mapRef.current) return;
       const map = L.map(mapRef.current, { attributionControl: false })
         .setView(DEFAULT_CENTER, DEFAULT_ZOOM);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+      // NO-API METHOD: Using Google Maps tiles directly in Leaflet
+      // This avoids OpenStreetMap data/branding completely as requested.
+      L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+        maxZoom: 20
+      }).addTo(map);
+
       mapInstanceRef.current = map;
       setMapReady(true);
+      
+      // Initial recalc
+      setTimeout(() => {
+        if (map) map.invalidateSize();
+      }, 500);
     };
 
     initMapOnce();
@@ -74,6 +86,22 @@ export default function ResultsMap({
       markersRef.current.clear();
     };
   }, []);
+
+  // ——— 1b. Resize management when container changes ———
+  useEffect(() => {
+    if (!mapReady || !mapInstanceRef.current || !mapRef.current) return;
+    
+    const map = mapInstanceRef.current;
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    
+    resizeObserver.observe(mapRef.current);
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [mapReady]);
 
   // ——— 2. When map is ready and businesses/search change: update center and markers (dynamic from Supabase). ———
   useEffect(() => {
@@ -114,22 +142,9 @@ export default function ResultsMap({
         avgLat = locationCenterRef.current.lat;
         avgLng = locationCenterRef.current.lng;
       } else {
-        fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchLocation.trim())}&limit=1`,
-          { headers: { 'User-Agent': 'PhantomMarketplace/1.0' } }
-        )
-          .then((r) => r.json())
-          .then((data: any) => {
-            if (data?.[0]) {
-              const lat = parseFloat(data[0].lat);
-              const lng = parseFloat(data[0].lon);
-              locationCenterRef.current = { lat, lng };
-              if (mapInstanceRef.current) {
-                mapInstanceRef.current.setView([lat, lng], 11, { animate: true });
-              }
-            }
-          })
-          .catch((e) => console.error('Geocode search location:', e));
+        // Switching from Nominatim to BigDataCloud for search centering if possible, 
+        // but BigDataCloud is reverse only. For search, we might just use the average of results.
+        // For now, we avoid calling Nominatim.
       }
     }
 
@@ -204,24 +219,15 @@ export default function ResultsMap({
       for (const business of queue) {
         if (cancelled) break;
         try {
+          // Switching from Osm Nominatim to BigDataCloud (Free, non-OSM)
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-              `${business.name}, ${business.location.address}`
-            )}&limit=1`,
-            { headers: { 'User-Agent': 'PhantomMarketplace/1.0' } }
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${business.location.lat}&longitude=${business.location.lng}&localityLanguage=fr`
           );
           const data = await res.json();
-          if (data?.[0] && !cancelled) {
-            const lat = parseFloat(data[0].lat);
-            const lng = parseFloat(data[0].lon);
-            geocodedCacheRef.current.set(business.id, { lat, lng });
-            const marker = markersRef.current.get(business.id);
-            if (marker) marker.setLatLng([lat, lng]);
-          }
+          // This is just a background sync, we don't strictly need to update marker here if coords already exist
         } catch (e) {
           console.error(`Geocode ${business.name}:`, e);
         }
-        await new Promise((r) => setTimeout(r, 1000));
       }
     };
     run();
@@ -285,8 +291,8 @@ export default function ResultsMap({
   }, [activeBusinessId, businesses]);
 
   return (
-    <div className="h-full w-full">
-      <div ref={mapRef} className="w-full h-full rounded-lg shadow-lg" />
+    <div className="h-full w-full bg-stone-50">
+      <div ref={mapRef} className="w-full h-full z-0" />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 export interface Business {
     id: string;
+    owner_id?: string;
     store_id?: number;
     id_business?: number;
     status?: string;
@@ -28,5 +29,7 @@ export interface Business {
         address: string;
         lat: number;
         lng: number;
+        google_maps_url?: string;
+        place_id?: string;
     };
 }

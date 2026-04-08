@@ -4,15 +4,19 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import BusinessCard from '@/components/ui/BusinessCard';
 import ResultsMap from '@/components/ui/ResultsMap';
-import { Search, SlidersHorizontal, Loader2, Package, LayoutGrid, Store, Tags, Star } from 'lucide-react';
+import { Search, SlidersHorizontal, Loader2, Package, LayoutGrid, Store, Tags, Star, AlertCircle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { searchStores } from '@/lib/actions/search_bus';
 import { searchItems, SearchResultItem } from '@/lib/actions/search_items';
 import { searchServicesDirectory } from '@/lib/actions/search_service';
-import { ProductCard } from '@/components/ProductCard';
-import { ServiceCard } from '@/components/ServiceCard';
-import { Business } from '@/types/business';
+import { getPlaceCoordinates, persistLocation } from '@/lib/actions/serpapi'
+import { createClient } from '@/lib/supabase/client'
+import { ProductCard } from '@/components/ProductCard'
+import { ServiceCard } from '@/components/ServiceCard'
+import { Business } from '@/types/business'
+import { haversineKm, GeoPoint } from '@/lib/actions/geosearch'
+import { MapPin } from 'lucide-react'
 
 function SearchPageContent() {
   const router = useRouter();
@@ -26,31 +30,108 @@ function SearchPageContent() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [products, setProducts] = useState<SearchResultItem[]>([]);
   const [services, setServices] = useState<SearchResultItem[]>([]);
+  const [userLocation, setUserLocation] = useState<GeoPoint | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [compared, setCompared] = useState<number[]>([]);
   const businessRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // Detect user location
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.warn('Geolocation error:', error);
+        }
+      );
+    }
+  }, []);
 
   useEffect(() => {
     const fetchAllResults = async () => {
       setIsLoading(true);
+      setSearchError(null);
       try {
         const [busResults, prodResults, servResults] = await Promise.all([
           searchStores(query, location),
           searchItems(query),
           searchServicesDirectory(query, location)
         ]);
-        setBusinesses(busResults);
-        setProducts(prodResults.data || []);
-        setServices(servResults.data || []);
+
+        let finalBusinesses = [...busResults];
+        let finalProducts = [...(prodResults.data || [])];
+        let finalServices = [...(servResults.data || [])];
+
+        // Apply proximity sorting if user location is available
+        if (userLocation) {
+          const calculateDistance = (item: any) => {
+            const itemLat = item.latitude || item.location?.lat;
+            const itemLng = item.longitude || item.location?.lng;
+            if (itemLat && itemLng) {
+              return haversineKm(userLocation, { lat: itemLat, lng: itemLng });
+            }
+            return Infinity;
+          };
+
+          finalBusinesses.sort((a, b) => calculateDistance(a) - calculateDistance(b));
+          finalProducts.sort((a, b) => calculateDistance(a) - calculateDistance(b));
+          finalServices.sort((a, b) => calculateDistance(a) - calculateDistance(b));
+        }
+
+        setBusinesses(finalBusinesses);
+        setProducts(finalProducts);
+        setServices(finalServices);
+        
+        if (!busResults.length && !prodResults.data?.length && !servResults.data?.length) {
+            if (prodResults.error || servResults.error) {
+              setSearchError('Problème de connexion aux serveurs de données.');
+            } else {
+              // ========== SMART FALLBACK: SEMANTIC SEARCH ==========
+              console.log('🧠 No standard results. Trying semantic search...');
+              try {
+                const response = await fetch('/api/semantic-search', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ query }),
+                });
+                
+                if (response.ok) {
+                  const semanticRes = await response.json();
+                  if (semanticRes.results && semanticRes.results.length > 0) {
+                    console.log(`✅ Semantic search found ${semanticRes.results.length} results.`);
+                    setProducts(semanticRes.results.map((item: any) => ({ ...item, isRealItem: true })));
+                  }
+                }
+              } catch (semErr) {
+                console.error('Semantic search fallback failed:', semErr);
+              }
+            }
+        }
+
       } catch (err) {
         console.error('Fetch error:', err);
+        setSearchError('Une erreur réseau est survenue lors de la recherche.');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchAllResults();
-  }, [query, location]);
+  }, [query, location, userLocation]);
+  
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+  }, []);
 
   // When user clicks a marker: highlight it, scroll list to card, open map popup (via activeBusinessId)
   const handleMarkerClick = (businessId: string) => {
@@ -64,6 +145,28 @@ function SearchPageContent() {
   const handleCardClick = (businessId: string) => {
     setActiveBusinessId(businessId);
     setTimeout(() => setActiveBusinessId(undefined), 5000);
+  };
+
+  const handleCardHover = async (item: SearchResultItem) => {
+    setActiveBusinessId(item.id);
+
+    // If the item doesn't have precise coordinates (is directory result or default), try to fetch via SerpAPI
+    if (item.id_business && (!item.latitude || !item.longitude)) {
+      const coords = await getPlaceCoordinates(item.name, item.city || location || 'Tunisie');
+      if (coords) {
+        // Update the item in the services state
+        setServices(prev => prev.map(s => s.id === item.id ? { 
+          ...s, 
+          latitude: coords.lat, // Important: update latitude/longitude for ResultsMap
+          longitude: coords.lng,
+          location: { ...s.location, lat: coords.lat, lng: coords.lng } 
+        } : s));
+
+        // Persist the coordinates to the database
+        const persistType = (item as any).isNative ? 'STORE' : (item.item_type === 'SERVICE' ? 'SERVICE' : 'DIRECTORY');
+        persistLocation(persistType, item.id_business, coords.lat, coords.lng);
+      }
+    }
   };
 
   const handleProductClick = (item: SearchResultItem) => {
@@ -130,6 +233,18 @@ function SearchPageContent() {
             <Loader2 className="w-10 h-10 text-red-600 animate-spin mb-4" />
             <p className="text-gray-500 font-medium">Recherche en cours...</p>
           </div>
+        ) : searchError ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-stone-50 rounded-3xl border-2 border-dashed border-stone-200">
+            <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+            <h3 className="text-xl font-bold text-stone-900 mb-2">{searchError}</h3>
+            <p className="text-stone-500 mb-6 text-center max-w-md">Nous ne parvenons pas à récupérer tous les résultats. Cela peut être dû à une instabilité de votre connexion.</p>
+            <button 
+              onClick={() => router.refresh()}
+              className="px-8 py-3 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 hover:bg-red-700 transition-all active:scale-95"
+            >
+              🔄 Réessayer la recherche
+            </button>
+          </div>
         ) : (
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Results Section */}
@@ -164,13 +279,12 @@ function SearchPageContent() {
                         {[...products, ...services].slice(0, 4).map((item: SearchResultItem) => (
                           <div key={item.id}>
                             {item.item_type === 'SERVICE' ? (
-                            /* Service Card Component */
                             <ServiceCard 
                               item={item} 
                               businessName={item.stores?.name}
-                              onViewDetails={() => router.push(`/merchants/service/${item.id}`)}
-
-                              hideBooking={false} 
+                              onViewDetails={() => router.push(item.isRealItem ? `/merchants/service/${item.id}` : `/merchants/business/${item.slug || item.id}`)}
+                              hideBooking={!item.isRealItem}
+                              isOwner={user?.id === (item.owner_id || item.stores?.owner_id)}
                             />
                             ) : (
                               <ProductCard
@@ -179,6 +293,7 @@ function SearchPageContent() {
                                 compared={compared.includes(item.id)}
                                 onCompare={() => toggleCompare(item.id)}
                                 onViewDetails={() => router.push(`/merchants/product/${item.id}`)}
+                                isOwner={user?.id === (item.owner_id || item.stores?.owner_id)}
                               />
                             )}
                           </div>
@@ -241,8 +356,7 @@ function SearchPageContent() {
                               item={item} 
                               businessName={item.stores?.name}
                               onViewDetails={() => router.push(`/merchants/service/${item.id}`)}
-
-                              hideBooking={false}
+                              isOwner={user?.id === (item.owner_id || item.stores?.owner_id)}
                             />
                           ) : (
                             <ProductCard
@@ -251,6 +365,7 @@ function SearchPageContent() {
                               compared={compared.includes(item.id)}
                               onCompare={() => toggleCompare(item.id)}
                               onViewDetails={() => handleProductClick(item)}
+                              isOwner={user?.id === (item.owner_id || item.stores?.owner_id)}
                             />
                           )}
                         </div>
@@ -271,12 +386,16 @@ function SearchPageContent() {
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       {services.map((item: SearchResultItem) => (
-                        <div key={item.id}>
+                        <div 
+                          key={item.id}
+                          onMouseEnter={() => handleCardHover(item)}
+                          onMouseLeave={() => setActiveBusinessId(undefined)}
+                        >
                           <ServiceCard 
                             item={item} 
                             businessName={item.stores?.name}
-                            onViewDetails={() => router.push(`/merchants/business/${item.id}`)}
-                            hideBooking={false}
+                            onViewDetails={() => router.push(`/merchants/business/${item.slug || item.id}`)}
+                            hideBooking={true}
                             hidePricing={true}
                           />
                         </div>

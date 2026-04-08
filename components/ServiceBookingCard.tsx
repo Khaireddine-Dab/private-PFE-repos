@@ -17,6 +17,7 @@ interface Props {
   businessReviews?: number;
   isVerified: boolean;
   isLinkedToStore?: boolean;
+  isOwner?: boolean;
 }
 
 const UNIT_LABELS: Record<string, string> = {
@@ -39,6 +40,7 @@ export default function ServiceBookingCard({
   businessReviews = 0,
   isVerified,
   isLinkedToStore = true,
+  isOwner = false,
 }: Props) {
   const { openDrawer } = useActionDrawer();
 
@@ -74,7 +76,15 @@ export default function ServiceBookingCard({
         </div>
 
         {/* This button shows only if linked/verified */}
-        {isLinkedToStore ? (
+        {isOwner ? (
+          <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 flex flex-col items-center text-center gap-2">
+            <AlertCircle className="w-5 h-5 text-amber-500" />
+            <div className="text-xs text-amber-900 font-bold uppercase tracking-tight">Action Impossible</div>
+            <p className="text-[10px] text-amber-700 leading-tight">
+              Vous ne pouvez pas effectuer de réservation sur votre propre établissement.
+            </p>
+          </div>
+        ) : isLinkedToStore ? (
           <button
             type="button"
             onClick={handleReservationClick}

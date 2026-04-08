@@ -49,6 +49,37 @@ const ACCENT_COLORS = [
   'bg-amber-500', 'bg-green-500', 'bg-cyan-500',
 ];
 
+// Mock stories for demo/fallback
+const MOCK_STORIES: RealStory[] = [
+  {
+    id: 1,
+    media_url: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=400&h=600&fit=crop',
+    media_type: 'image',
+    caption: 'Bienvenue dans notre boutique! Découvrez notre nouvelle collection.',
+    views_count: 234,
+    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    author: { full_name: 'Équipe Boutique', avatar_url: undefined }
+  },
+  {
+    id: 2,
+    media_url: 'https://images.unsplash.com/photo-1506755855726-01d4fe0e4277?w=400&h=600&fit=crop',
+    media_type: 'image',
+    caption: 'Produit en vedette: Qualité premium à prix imbattable ✨',
+    views_count: 456,
+    created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+    author: { full_name: 'Promotions', avatar_url: undefined }
+  },
+  {
+    id: 3,
+    media_url: 'https://images.unsplash.com/photo-1525904097614-1be0e3cb5d1a?w=400&h=600&fit=crop',
+    media_type: 'image',
+    caption: 'Offre spéciale cette semaine! Ne manquez pas cette occasion',
+    views_count: 678,
+    created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+    author: { full_name: 'Offres', avatar_url: undefined }
+  }
+];
+
 // ─── Story Viewer Dialog ───────────────────────────────────────────────────────
 function StoryItem({ story, accentColor }: { story: RealStory; accentColor: string }) {
   const authorName = story.author?.full_name || 'Client';
@@ -305,15 +336,21 @@ interface BusinessStoriesProps {
 }
 
 export function BusinessStories({ storeId, initialStories = [] }: BusinessStoriesProps) {
-  const [stories, setStories] = useState<RealStory[]>(initialStories);
+  // Use mock stories if no real stories exist, otherwise use real stories
+  const defaultStories = initialStories && initialStories.length > 0 ? initialStories : MOCK_STORIES;
+  const [stories, setStories] = useState<RealStory[]>(defaultStories);
 
   const handleAdded = (newStory: RealStory) => {
-    setStories(prev => [newStory, ...prev]);
+    // Replace mock stories with real ones when adding first real story
+    setStories(prev => {
+      const hasMockStories = prev.some(s => s.id <= 3);
+      if (hasMockStories) {
+        // Remove mock stories and add the new real story
+        return [newStory];
+      }
+      return [newStory, ...prev];
+    });
   };
-
-  if (stories.length === 0) {
-    return null;
-  }
 
   return (
     <div className="bg-white border-y border-slate-100 py-6 px-4">
@@ -339,7 +376,7 @@ export function BusinessStories({ storeId, initialStories = [] }: BusinessStorie
           {/* Add story button always first */}
           <AddStoryButton storeId={storeId} onAdded={handleAdded} />
           
-          {/* Real stories */}
+          {/* Real or mock stories */}
           {stories.map((story, i) => (
             <div key={story.id} className="snap-start shrink-0">
                <StoryItem story={story} accentColor={ACCENT_COLORS[i % ACCENT_COLORS.length]} />

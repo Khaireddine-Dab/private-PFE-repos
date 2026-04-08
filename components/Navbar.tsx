@@ -772,17 +772,16 @@ export default function Navbar() {
       async (pos) => {
         const { latitude, longitude } = pos.coords;
         try {
+          // Switching from OSM Nominatim to BigDataCloud (Free, non-OSM branded)
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-            { headers: { 'User-Agent': 'Ro2yaMarketplace/1.0' } }
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=fr`
           );
           const data = await res.json();
           const city =
-            data.address?.city ||
-            data.address?.town ||
-            data.address?.village ||
-            data.address?.county ||
-            'Near me';
+            data.locality ||
+            data.city ||
+            data.principalSubdivision ||
+            'Ma position';
           setLocationQuery(city);
         } catch {
           setLocationQuery(`${latitude.toFixed(3)}, ${longitude.toFixed(3)}`);

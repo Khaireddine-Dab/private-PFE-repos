@@ -40,6 +40,7 @@ export interface ServiceDetail {
     total_reviews: number;
     opening_hours: Record<string, { open: string; close: string; closed: boolean }> | null;
     verified_at: string | null;
+    owner_id: string;
   };
   schedules: {
     id: number;
@@ -108,7 +109,8 @@ export async function getServiceById(id: any): Promise<ServiceDetail | null> {
         rating_average,
         total_reviews,
         opening_hours,
-        verified_at
+        verified_at,
+        owner_id
       ),
       service_schedules (
         id,
@@ -149,7 +151,8 @@ export async function getServiceById(id: any): Promise<ServiceDetail | null> {
           rating_average: 0,
           total_reviews: 0,
           opening_hours: null,
-          verified_at: null
+          verified_at: null,
+          owner_id: ''
       },
       schedules: itemData.service_schedules ?? [],
     } as ServiceDetail;
@@ -176,7 +179,8 @@ export async function getServiceById(id: any): Promise<ServiceDetail | null> {
             rating_average,
             total_reviews,
             opening_hours,
-            verified_at
+            verified_at,
+            owner_id
         )
     `)
     .eq('service_id', id)
@@ -218,7 +222,8 @@ export async function getServiceById(id: any): Promise<ServiceDetail | null> {
           rating_average: dirData.rating_average || 0,
           total_reviews: dirData.total_reviews || 0,
           opening_hours: dirData.opening_hours || null,
-          verified_at: null
+          verified_at: null,
+          owner_id: dirData.owner_id || ''
       },
       schedules: [],
     } as ServiceDetail;

@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { Database } from '@/types/supabase';
 import { revalidatePath } from 'next/cache';
+import { notifyBookingCreated, notifyBookingConfirmed } from './notifications';
 
 export type BookingInsert = Database['public']['Tables']['bookings']['Insert'];
 export type BookingRow = Database['public']['Tables']['bookings']['Row'];
@@ -17,6 +18,32 @@ export async function createBooking(data: Omit<BookingInsert, 'booking_number' |
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
     throw new Error('Vous devez être connecté pour réserver.');
+  }
+
+  // Fetch store info for notifications
+  const { data: store, error: storeError } = await (supabase
+    .from('stores') as any)
+    .select('id, name, owner_id')
+    .eq('id', data.store_id)
+    .single();
+
+  if (storeError || !store) {
+    console.error('Error fetching store:', storeError);
+    throw new Error('la boutique n\'a pas été trouvée');
+  }
+
+  // Fetch item/service name if item_id is provided
+  let itemName = 'Service';
+  if ((data as any).item_id) {
+    const { data: item } = await (supabase
+      .from('items') as any)
+      .select('name')
+      .eq('id', (data as any).item_id)
+      .single();
+    
+    if (item) {
+      itemName = item.name;
+    }
   }
 
   // Generate a unique booking number: BK-XXXXXX-XXXX
@@ -36,6 +63,20 @@ export async function createBooking(data: Omit<BookingInsert, 'booking_number' |
   if (error) {
     console.error('Error creating booking:', error);
     throw new Error(`Erreur lors de la réservation : ${error.message}`);
+  }
+
+  // Send notifications to customer and business owner
+  try {
+    await notifyBookingCreated(
+      user.id,
+      store.owner_id,
+      booking.id,
+      store.name,
+      itemName
+    );
+  } catch (notifError) {
+    console.error('Error sending booking notification:', notifError);
+    // Don't fail the booking creation if notifications fail
   }
 
   revalidatePath(`/merchants/business/${data.store_id}`);
@@ -113,12 +154,37 @@ export async function updateBookingStatus(
       status: status
     })
     .eq('id', bookingId)
-    .select()
+    .select(
+      `
+        *,
+        stores (name),
+        items (name)
+      `
+    )
     .single();
 
   if (error) {
     console.error('Error updating booking status:', error);
     throw new Error(error.message);
+  }
+
+  // Send notification when booking is confirmed
+  if (status === 'CONFIRMED') {
+    try {
+      const storeName = (data as any).stores?.name || 'Boutique';
+      const serviceName = (data as any).items?.name || 'Service';
+      
+      await notifyBookingConfirmed(
+        data.customer_id,
+        storeName,
+        serviceName,
+        data.booking_date,
+        data.start_time
+      );
+    } catch (notifError) {
+      console.error('Error sending booking confirmation notification:', notifError);
+      // Don't fail the status update if notifications fail
+    }
   }
 
   revalidatePath(`/dashboard/${data.store_id}/leads`);

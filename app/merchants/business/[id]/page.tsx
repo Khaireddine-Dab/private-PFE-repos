@@ -3,7 +3,7 @@ import { getReviewsByStoreId } from '@/lib/actions/reviews';
 import { getPublicItemsByStoreId } from '@/lib/actions/items';
 import { getBusinessStories } from '@/lib/actions/stories';
 import { getPromotions } from '@/lib/actions/promotions';
-import { Star, MapPin, Phone, Globe, Clock, Bookmark, Camera, Package, AlertCircle } from 'lucide-react';
+import { Star, MapPin, Phone, Globe, Clock, Bookmark, Camera, Package, AlertCircle, Store, Settings } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import BusinessImageGallery from '@/components/BusinessImageGallery';
@@ -11,12 +11,16 @@ import { BusinessStories } from '@/components/BusinessStories';
 import { BusinessItemsList } from '@/components/BusinessItemsList';
 import PromotionBanner from '@/components/PromotionBanner';
 import { notFound } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
+import Link from 'next/link';
 import { WriteReviewButton } from '@/components/WriteReviewButton';
 import { ShareBusinessButton } from '@/components/ShareBusinessButton';
 import { Item } from '@/lib/actions/items';
 import BusinessReservationSidebar from '@/components/BusinessReservationSidebar';
 import BusinessCommandSidebar from '@/components/BusinessCommandSidebar';
 import FavoriteButton from '@/components/FavoriteButton';
+import StoreLocationMap from '@/components/StoreLocationMap';
+import { getPlaceCoordinates, persistLocation } from '@/lib/actions/serpapi';
 
 interface Promotion {
   id: number;
@@ -41,6 +45,25 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
   if (!business) {
     notFound();
   }
+
+  // Attempt to fetch precise location via SerpApi if we only have default coordinates
+  // and it's a directory business (usually having id_business)
+  if (business.location.lat === 36.8065 && business.location.lng === 10.1815) {
+    const coords = await getPlaceCoordinates(business.name, business.location.address || business.category || '');
+    if (coords) {
+      business.location.lat = coords.lat;
+      business.location.lng = coords.lng;
+
+      // Persist the coordinates to the database
+      const persistType = business.store_id ? 'STORE' : (business.id_business ? 'DIRECTORY' : 'SERVICE');
+      const persistId = business.store_id || business.id_business || business.id;
+      persistLocation(persistType, persistId, coords.lat, coords.lng);
+    }
+  }
+
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const isOwner = !!(user?.id && business.owner_id && user.id === business.owner_id);
 
   const storeId = business.store_id;
   const items = storeId ? await getPublicItemsByStoreId(storeId) : [];
@@ -78,6 +101,30 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
+      
+      {/* Store Owner Banner */}
+      {isOwner && (
+        <div className="bg-indigo-600 border-b border-indigo-700 text-white px-4 py-3 flex items-center justify-between shadow-md relative z-50">
+          <div className="flex items-center gap-4 max-w-7xl mx-auto w-full">
+            <div className="bg-white/20 p-2 rounded-xl hidden sm:block">
+              <Store className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-sm">Ceci est la vue publique de votre établissement</p>
+              <p className="text-indigo-200 text-xs hidden md:block mt-0.5">C'est ici que vos clients découvrent vos services et réservent.</p>
+            </div>
+            <Link 
+              href={`/dashboard/${storeId || business.id_business || business.id}`}
+              className="flex items-center gap-2 bg-white text-indigo-600 px-4 py-2.5 rounded-xl text-sm font-black hover:bg-indigo-50 hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95 whitespace-nowrap"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Gérer ma boutique</span>
+              <span className="sm:hidden">Gérer</span>
+            </Link>
+          </div>
+        </div>
+      )}
+
       <PromotionBanner promotions={activePromos} />
       {/* Hero Section with Photos + Overlay Header */}
       <div className="bg-white border-b">
@@ -235,6 +282,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
                   businessId={businessId}
                   activePromos={activePromos}
                   isLinkedToStore={!!business.store_id}
+                  isOwner={isOwner}
                 />
               </div>
             )}
@@ -335,7 +383,31 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
               isLinkedToStore={!!business.store_id}
               hasProducts={hasProducts}
               items={items}
+              isOwner={isOwner}
             />
+
+            {/* Location Map Card */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+              <div className="p-4 border-b border-gray-50 flex items-center justify-between">
+                <h3 className="font-bold text-gray-900">Localisation</h3>
+                <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase">Google Maps</span>
+              </div>
+              <div className="h-64 w-full">
+                <StoreLocationMap 
+                  lat={business.location.lat} 
+                  lng={business.location.lng} 
+                  businessName={business.name}
+                  address={business.location.address}
+                  googleMapsUrl={business.location.google_maps_url}
+                  placeId={business.location.place_id}
+                />
+              </div>
+              <div className="p-4 bg-gray-50/50">
+                <p className="text-xs text-gray-500 leading-relaxed italic">
+                  Précision améliorée via SerpApi & Google Maps
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

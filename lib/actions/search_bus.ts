@@ -21,7 +21,7 @@ export async function searchStores(queryStr: string = '', locationStr: string = 
         let keywords = targetString.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !noiseWords.has(w));
         if (keywords.length === 0) keywords = [queryStr.toLowerCase()];
         keywords.forEach(kw => {
-            storesQuery = storesQuery.or(`name.ilike.%${kw}%,description.ilike.%${kw}%,address.ilike.%${kw}%`);
+            storesQuery = storesQuery.or(`name.ilike.%${kw}%,description.ilike.%${kw}%,address.ilike.%${kw}%,city.ilike.%${kw}%`);
         });
     }
 
@@ -41,7 +41,7 @@ export async function searchStores(queryStr: string = '', locationStr: string = 
         let keywords = targetString.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !noiseWords.has(w));
         if (keywords.length === 0) keywords = [queryStr.toLowerCase()];
         keywords.forEach(kw => {
-            dirQuery = dirQuery.or(`title.ilike.%${kw}%,categoryName.ilike.%${kw}%,vitrine_category.ilike.%${kw}%,full_address.ilike.%${kw}%`);
+            dirQuery = dirQuery.or(`title.ilike.%${kw}%,categoryName.ilike.%${kw}%,vitrine_category.ilike.%${kw}%,full_address.ilike.%${kw}%,city.ilike.%${kw}%`);
         });
     }
 

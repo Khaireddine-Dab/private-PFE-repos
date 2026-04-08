@@ -28,9 +28,10 @@ interface Props {
     businessId: string;
     activePromos: Promotion[];
     isLinkedToStore: boolean;
+    isOwner?: boolean;
 }
 
-export function BusinessItemsList({ items, businessName, businessId, activePromos, isLinkedToStore }: Props) {
+export function BusinessItemsList({ items, businessName, businessId, activePromos, isLinkedToStore, isOwner = false }: Props) {
     const router = useRouter();
 
     if (items.length === 0) {
@@ -64,6 +65,7 @@ export function BusinessItemsList({ items, businessName, businessId, activePromo
                         businessName={businessName}
                         promotion={promoProps}
                         hideBooking={!isLinkedToStore}
+                        isOwner={isOwner}
                         onViewDetails={() => router.push(`/merchants/service/${item.id}`)}
                     />
                 ) : (
@@ -73,6 +75,7 @@ export function BusinessItemsList({ items, businessName, businessId, activePromo
                         businessName={businessName}
                         promotion={promoProps}
                         hideBuyButton={!isLinkedToStore}
+                        isOwner={isOwner}
                         onViewDetails={() => router.push(`/merchants/product/${item.id}`)}
                     />
                 );

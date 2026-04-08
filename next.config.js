@@ -10,17 +10,18 @@ const isDev = process.env.NODE_ENV === 'development'
 
 const ContentSecurityPolicy = `
   default-src 'self';
-  script-src 'self' ${isDev ? "'unsafe-eval' 'unsafe-inline'" : "'strict-dynamic'"};
+  script-src 'self' ${isDev ? "'unsafe-eval' 'unsafe-inline'" : "'strict-dynamic'"} https://maps.googleapis.com;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src 'self' https://fonts.gstatic.com;
-  img-src 'self' blob: data: https://*.supabase.co https://images.unsplash.com https://*.unsplash.com https://lh3.googleusercontent.com https://maps.googleapis.com https://*.googleapis.com https://*.gstatic.com https://streetviewpixels-pa.googleapis.com https://*.googleusercontent.com https://upload.wikimedia.org https://*.cloudinary.com https://res.cloudinary.com *;
+  img-src 'self' blob: data: https://*.supabase.co https://images.unsplash.com https://*.unsplash.com https://lh3.googleusercontent.com https://maps.googleapis.com https://*.googleapis.com https://*.gstatic.com https://*.google.com https://streetviewpixels-pa.googleapis.com https://*.googleusercontent.com https://upload.wikimedia.org https://*.cloudinary.com https://res.cloudinary.com *;
   media-src 'self';
   connect-src 'self'
     https://*.supabase.co
     https://*.supabase.io
     wss://*.supabase.co
+    https://maps.googleapis.com
   ${isDev ? 'ws://localhost:3000 http://localhost:3000' : ''};
-  frame-src 'none';
+  frame-src 'self' https://www.google.com https://maps.google.com;
   object-src 'none';
   base-uri 'self';
   form-action 'self';

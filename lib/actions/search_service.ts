@@ -46,7 +46,7 @@ export async function searchServicesDirectory(query?: string, location?: string)
         const keywords = translatedQuery.toLowerCase().split(/\s+/).filter(w => w.length > 2);
         if (keywords.length > 0) {
             keywords.forEach(keyword => {
-                request = request.or(`name.ilike.%${keyword}%,description.ilike.%${keyword}%,category.ilike.%${keyword}%`);
+                request = request.or(`name.ilike.%${keyword}%,description.ilike.%${keyword}%,category.ilike.%${keyword}%,city.ilike.%${keyword}%`);
             });
         }
     }
@@ -67,7 +67,7 @@ export async function searchServicesDirectory(query?: string, location?: string)
         const keywords = translatedQuery.toLowerCase().split(/\s+/).filter(w => w.length > 2);
         if (keywords.length > 0) {
             keywords.forEach(kw => {
-                storesQuery = storesQuery.or(`name.ilike.%${kw}%,description.ilike.%${kw}%,address.ilike.%${kw}%`);
+                storesQuery = storesQuery.or(`name.ilike.%${kw}%,description.ilike.%${kw}%,address.ilike.%${kw}%,city.ilike.%${kw}%`);
             });
         }
     }
@@ -104,7 +104,12 @@ export async function searchServicesDirectory(query?: string, location?: string)
                 id: item.slug || item.service_id.toString(), // prefer slug for /merchants/business/[slug]
                 item_type: 'SERVICE',
                 price: item.price || 0,
-                main_image: storeLogo || fallbackImage
+                main_image: storeLogo || fallbackImage,
+                isRealItem: false,
+                id_business: item.service_id,
+                latitude: item.latitude,
+                longitude: item.longitude,
+                city: item.city
             });
         });
     }
@@ -123,7 +128,12 @@ export async function searchServicesDirectory(query?: string, location?: string)
                 item_type: 'SERVICE',
                 price: item.price || 0,
                 main_image: item.logo_url || fallbackImage,
-                stores: { name: item.name } // Match the structure expected by the frontend
+                isRealItem: false,
+                id_business: item.id,
+                latitude: item.latitude,
+                longitude: item.longitude,
+                city: item.city,
+                stores: { name: item.name, owner_id: item.owner_id } // Match the structure expected by the frontend
             });
         });
     }

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { createClient } from '@/lib/supabase/server';
 import { getProductById, getProductReviews, getRelatedItems } from '@/lib/actions/product_detail';
 import { getBusinessStories } from '@/lib/actions/stories';
 import { BusinessStories } from '@/components/BusinessStories';
@@ -54,7 +55,9 @@ export default async function ProductProfilePage({ params }: { params: { id: str
   const id = parseInt(params.id);
   if (isNaN(id)) notFound();
 
-  const [product, reviews] = await Promise.all([
+  const supabase = createClient();
+  const [{ data: { user } }, product, reviews] = await Promise.all([
+    supabase.auth.getUser(),
     getProductById(id),
     getProductReviews(id),
   ]);
@@ -68,6 +71,7 @@ export default async function ProductProfilePage({ params }: { params: { id: str
   const heroImage  = images[0] ?? 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1200&h=500&fit=crop';
   const catColor   = categoryColors[product.store.category] ?? categoryColors.OTHER;
   const isVerified = !!product.store.verified_at;
+  const isOwner    = user?.id === product.store.owner_id;
   const statusInfo = statusConfig[product.status] ?? statusConfig.AVAILABLE;
 
   const avgRating = reviews.length
@@ -352,6 +356,7 @@ export default async function ProductProfilePage({ params }: { params: { id: str
               storeSlug={product.store.slug}
               storeName={product.store.name}
               isVerified={isVerified}
+              isOwner={isOwner}
             />
           </div>
 

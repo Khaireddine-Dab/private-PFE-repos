@@ -16,6 +16,7 @@ interface Props {
   storeSlug: string;
   isVerified: boolean;
   storeName?: string;
+  isOwner?: boolean;
 }
 
 const UNIT_LABELS: Record<string, string> = {
@@ -33,7 +34,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 
 export default function ProductOrderCard({
   productId, productName, price, priceUnit,
-  stockQuantity, status, storePhone, storeSlug, isVerified, storeName = 'Boutique',
+  stockQuantity, status, storePhone, storeSlug, isVerified, storeName = 'Boutique', isOwner = false,
 }: Props) {
   const { openDrawer } = useActionDrawer();
   const [quantity,  setQuantity]  = useState(1);
@@ -112,7 +113,15 @@ export default function ProductOrderCard({
         )}
 
         {/* CTA */}
-        {canOrder ? (
+        {isOwner ? (
+          <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 flex flex-col items-center text-center gap-2">
+            <AlertCircle className="w-5 h-5 text-amber-500" />
+            <div className="text-xs text-amber-900 font-bold uppercase tracking-tight">Action Impossible</div>
+            <p className="text-[10px] text-amber-700 leading-tight">
+              Vous ne pouvez pas effectuer de commande sur votre propre établissement.
+            </p>
+          </div>
+        ) : canOrder ? (
           <button
             onClick={handleCommandClick}
             className="w-full py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white"

@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { Database } from '@/types/supabase';
 import { revalidatePath } from 'next/cache';
+import { notifyOrderCreated, notifyOrderValidated, notifyOrderCompleted, notifyOrderCancelled } from './notifications';
 
 export type OrderInsert = Database['public']['Tables']['orders']['Insert'];
 export type OrderRow = Database['public']['Tables']['orders']['Row'];
@@ -23,6 +24,18 @@ export async function createOrder(data: Omit<OrderInsert, 'order_number' | 'stat
   // Generate a unique order number: ORD-XXXXXX-XXXX
   const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
+  // Fetch store info for notifications
+  const { data: store, error: storeError } = await (supabase
+    .from('stores') as any)
+    .select('id, name, owner_id')
+    .eq('id', data.store_id)
+    .single();
+
+  if (storeError || !store) {
+    console.error('Error fetching store:', storeError);
+    throw new Error('la boutique n\'a pas été trouvée');
+  }
+
   const { data: order, error } = await (supabase
     .from('orders') as any)
     .insert({
@@ -37,6 +50,20 @@ export async function createOrder(data: Omit<OrderInsert, 'order_number' | 'stat
   if (error) {
     console.error('Error creating order:', error);
     throw new Error(`Erreur lors de la commande : ${error.message}`);
+  }
+
+  // Send notifications to customer and business owner
+  try {
+    await notifyOrderCreated(
+      user.id,
+      store.owner_id,
+      orderNumber,
+      store.name,
+      data.total_price || 0
+    );
+  } catch (notifError) {
+    console.error('Error sending notifications:', notifError);
+    // Don't fail the order creation if notifications fail
   }
 
   revalidatePath(`/merchants/business/${data.store_id}`);
@@ -179,6 +206,19 @@ export async function validateOrder(orderId: number) {
     throw new Error(error.message);
   }
 
+  // Send notification to customer with tracking code
+  try {
+    await notifyOrderValidated(
+      data.customer_id,
+      data.order_number,
+      trackingCode,
+      data.total_price || 0
+    );
+  } catch (notifError) {
+    console.error('Error sending validation notification:', notifError);
+    // Don't fail the validation if notifications fail
+  }
+
   // Revalidate both dashboard and user profile
   revalidatePath(`/dashboard`);
   revalidatePath(`/profile/user`);
@@ -313,6 +353,18 @@ export async function markOrderAsDelivered(orderId: number) {
     throw new Error(error.message);
   }
 
+  // Send notification to customer about successful delivery
+  try {
+    await notifyOrderCompleted(
+      data.customer_id,
+      data.order_number,
+      data.total_price || 0
+    );
+  } catch (notifError) {
+    console.error('Error sending completion notification:', notifError);
+    // Don't fail the delivery update if notifications fail
+  }
+
   revalidatePath(`/dashboard`);
   revalidatePath(`/profile/user`);
 
@@ -341,6 +393,18 @@ export async function markOrderAsFailed(orderId: number, reason?: string) {
   if (error) {
     console.error('Error marking order as failed:', error);
     throw new Error(error.message);
+  }
+
+  // Send notification to customer about cancellation
+  try {
+    await notifyOrderCancelled(
+      data.customer_id,
+      data.order_number,
+      reason || 'Livraison échouée'
+    );
+  } catch (notifError) {
+    console.error('Error sending cancellation notification:', notifError);
+    // Don't fail the cancellation update if notifications fail
   }
 
   revalidatePath(`/dashboard`);

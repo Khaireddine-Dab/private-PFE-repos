@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { createClient } from '@/lib/supabase/server';
 import { getServiceById, getServiceReviews, getRelatedItems } from '@/lib/actions/service_detail';
 import { getBusinessStories } from '@/lib/actions/stories';
 import { BusinessStories } from '@/components/BusinessStories';
@@ -59,7 +60,9 @@ export default async function ServiceProfilePage({ params }: { params: { id: str
   const id = parseInt(params.id);
   if (isNaN(id)) notFound();
 
-  const [service, reviews] = await Promise.all([
+  const supabase = createClient();
+  const [{ data: { user } }, service, reviews] = await Promise.all([
+    supabase.auth.getUser(),
     getServiceById(id),
     getServiceReviews(id),
   ]);
@@ -73,6 +76,7 @@ export default async function ServiceProfilePage({ params }: { params: { id: str
   const heroImage  = images[0] ?? 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=1200&h=500&fit=crop';
   const catColor   = categoryColors[service.store.category] ?? categoryColors.OTHER;
   const isVerified = !!service.store.verified_at;
+  const isOwner    = user?.id === service.store.owner_id;
   const avgRating  = reviews.length
     ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
     : service.rating_average;
@@ -367,6 +371,7 @@ export default async function ServiceProfilePage({ params }: { params: { id: str
               businessReviews={service.store.total_reviews}
               isVerified={isVerified}
               isLinkedToStore={service.store.id > 0 || !!service.store.verified_at}
+              isOwner={isOwner}
             />
           </div>
 
