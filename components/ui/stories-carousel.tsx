@@ -129,11 +129,15 @@ export const StoryImage = ({ className, alt, ...props }: StoryImageProps) => (
 
 // ─── Video inside thumbnail ───────────────────────────────────────────────────
 
-export type StoryVideoProps = VideoHTMLAttributes<HTMLVideoElement>;
+export type StoryVideoProps = VideoHTMLAttributes<HTMLVideoElement> & {
+  /** When provided, the PARENT drives playback (true = play, false = pause+reset).
+   *  When omitted, the component falls back to its built-in hover-to-play logic. */
+  playing?: boolean;
+};
 
 const tRegex = /t=(\d+(?:\.\d+)?)/;
 
-export const StoryVideo = ({ className, ...props }: StoryVideoProps) => {
+export const StoryVideo = ({ className, playing, ...props }: StoryVideoProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const initialTimeRef = useRef<number>(0);
 
@@ -151,13 +155,30 @@ export const StoryVideo = ({ className, ...props }: StoryVideoProps) => {
     initialTimeRef.current = initialTime;
   }, [props.src]);
 
-  const handleMouseOver = () => { videoRef.current?.play(); };
-  const handleMouseOut = () => {
+  // ── Imperative control when parent passes `playing` prop ─────────────────
+  useEffect(() => {
+    if (playing === undefined) return; // fallback mode — self-managed
+    const video = videoRef.current;
+    if (!video) return;
+    if (playing) {
+      video.play().catch(() => {}); // catch AbortError on rapid hover
+    } else {
+      video.pause();
+      video.currentTime = initialTimeRef.current;
+    }
+  }, [playing]);
+
+  // ── Self-managed hover handlers (only active when parent doesn't control) ─
+  const selfManaged = playing === undefined;
+  const handleMouseOver    = selfManaged ? () => { videoRef.current?.play().catch(() => {}); } : undefined;
+  const handleMouseOut     = selfManaged ? () => {
     if (videoRef.current) {
       videoRef.current.pause();
       videoRef.current.currentTime = initialTimeRef.current;
     }
-  };
+  } : undefined;
+  const handlePointerEnter = selfManaged ? () => { videoRef.current?.play().catch(() => {}); } : undefined;
+  const handlePointerLeave = selfManaged ? handleMouseOut : undefined;
 
   return (
     <video
@@ -169,6 +190,8 @@ export const StoryVideo = ({ className, ...props }: StoryVideoProps) => {
       loop muted preload="metadata"
       onMouseOver={handleMouseOver}
       onMouseOut={handleMouseOut}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
       onFocus={handleMouseOver}
       onBlur={handleMouseOut}
       ref={videoRef}

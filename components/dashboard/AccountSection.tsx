@@ -21,41 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from '@/components/ui/badge';
 
-const plans: Record<'free' | 'pro' | 'business', { features: string[]; price: number; annualPrice?: number }> = {
-  free: {
-    price: 0,
-    features: [
-      'Profil de base',
-      "Jusqu'à 5 produits/services",
-      'Statistiques limitées',
-      'Support communautaire',
-    ],
-  },
-  pro: {
-    price: 29,
-    annualPrice: 290,
-    features: [
-      'Tout le forfait Gratuit +',
-      "Jusqu'à 50 produits/services",
-      'Statistiques avancées',
-      'Gestion des avis',
-      'Outils promotionnels',
-      'Support par email',
-    ],
-  },
-  business: {
-    price: 99,
-    annualPrice: 990,
-    features: [
-      'Tout le forfait Pro +',
-      'Produits illimités',
-      'Image de marque personnalisée',
-      'Accès API',
-      'Support prioritaire',
-      'Rapports avancés',
-    ],
-  },
-};
+// Plans removed: the app no longer offers selectable plans in the dashboard.
 
 interface AccountSectionProps {
   store: any;
@@ -143,7 +109,7 @@ export default function AccountSection({ store, user, subscription, storeId }: A
                 {currentPlan === 'free' ? 'Gratuit' : currentPlan === 'pro' ? 'Pro' : 'Business'}
               </h3>
               <p className="text-xl font-bold text-white/60">
-                {plans[currentPlan].price === 0 ? '0 DT' : `${plans[currentPlan].price} DT/mois`}
+                {subscription?.price ? `${subscription.price} DT/mois` : '—'}
               </p>
             </div>
             {subscription?.current_period_end && (
@@ -155,51 +121,7 @@ export default function AccountSection({ store, user, subscription, storeId }: A
         </Card>
       </div>
 
-      {/* Plans Selection */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {(Object.entries(plans) as [string, typeof plans['free']][]).map(([planKey, planData]) => {
-          const isCurrent = planKey === currentPlan;
-          const isLower = (currentPlan === 'business') || (currentPlan === 'pro' && planKey === 'free');
-          return (
-            <Card key={planKey} className={`relative border-0 shadow-2xl bg-white/5 backdrop-blur-2xl ring-1 transition-all duration-500 overflow-hidden group ${isCurrent ? 'ring-primary ring-2 scale-105 z-10' : 'ring-white/10 hover:ring-white/30'}`}>
-              {isCurrent && (
-                <div className="bg-primary text-primary-foreground py-1.5 px-4 text-center">
-                  <p className="text-[10px] font-black uppercase tracking-widest">SÉLECTIONNÉ</p>
-                </div>
-              )}
-              <CardHeader>
-                <CardTitle className="text-white capitalize flex items-center justify-between">
-                  {planKey === 'free' ? 'Gratuit' : planKey === 'pro' ? 'Pro' : 'Business'}
-                  {planKey === 'pro' && <Zap className="w-5 h-5 text-yellow-400" />}
-                  {planKey === 'business' && <Crown className="w-5 h-5 text-yellow-500" />}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <span className="text-4xl font-black text-white">{planData.price}</span>
-                  <span className="text-white/40 font-bold ml-1">DT/m</span>
-                </div>
-                <ul className="space-y-3">
-                  {planData.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                      <span className="text-sm text-white/60 font-medium">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button 
-                  className={`w-full rounded-xl font-bold py-6 ${isCurrent ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'}`}
-                  disabled={isCurrent || isLower}
-                  onClick={() => handleUpgrade(planKey)}
-                >
-                  {isCurrent ? 'Forfait Actuel' : isLower ? 'Rétrograder' : `Passer à ${planKey}`}
-                  {!isCurrent && !isLower && <ArrowRight className="w-4 h-4 ml-2" />}
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      {/* Plans removed */}
 
       {/* Danger Zone */}
       <Card className="border-0 shadow-2xl bg-rose-500/5 backdrop-blur-2xl ring-1 ring-rose-500/20">

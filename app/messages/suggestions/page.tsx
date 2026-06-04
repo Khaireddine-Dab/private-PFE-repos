@@ -56,11 +56,49 @@ export default async function SuggestionsPage() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {suggestions.map((user) => (
-                <SuggestionCard key={user.id} user={user} />
-              ))}
-            </div>
+            // Group suggestions into incoming requests, sent invites, and others
+            (() => {
+              const incoming = suggestions.filter(u => u.friendship?.status === 'PENDING' && u.friendship?.direction === 'RECEIVED');
+              const sent = suggestions.filter(u => u.friendship?.status === 'PENDING' && u.friendship?.direction === 'SENT');
+              const others = suggestions.filter(u => !(u.friendship?.status === 'PENDING'));
+
+              return (
+                <div className="space-y-8">
+                  {incoming.length > 0 && (
+                    <section>
+                      <h2 className="text-lg font-bold text-foreground mb-3">Demandes d'invitation</h2>
+                      <div className="space-y-4">
+                        {incoming.map(user => (
+                          <SuggestionCard key={user.id} user={user} />
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {sent.length > 0 && (
+                    <section>
+                      <h2 className="text-lg font-bold text-foreground mb-3">Invitations envoyées</h2>
+                      <div className="space-y-4">
+                        {sent.map(user => (
+                          <SuggestionCard key={user.id} user={user} />
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {others.length > 0 && (
+                    <section>
+                      <h2 className="text-lg font-bold text-foreground mb-3">Suggestions d'amis</h2>
+                      <div className="space-y-4">
+                        {others.map(user => (
+                          <SuggestionCard key={user.id} user={user} />
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                </div>
+              );
+            })()
           )}
         </div>
       </main>

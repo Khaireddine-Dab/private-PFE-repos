@@ -52,7 +52,7 @@ const OffersCarouselDemo = () => {
   return (
     <div className="w-full min-h-[500px] bg-[#F9F8F6] flex flex-col items-center justify-center p-4 md:p-10">
       <div className="w-full max-w-6xl">
-        <h2 className="text-3xl font-bold mb-6 text-[#111111]">Seulement pour aujourd'hui 🔥🎁</h2>
+        <h2 className="text-3xl font-bold mb-6 text-[#111111]">Offers d'aujourd'hui 🔥🎁</h2>
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <p className="text-gray-500">Chargement des offres...</p>
@@ -67,9 +67,9 @@ const OffersCarouselDemo = () => {
           </div>
         ) : (
           <OffersCarousel
-            offerTitle="Today Only 🔥🎁"
-            offerSubtitle="Special offers from top stores!"
-            ctaText="View all offers"
+            offerTitle="Offers d'aujourd'hui 🔥🎁"
+            offerSubtitle="Offres spéciales de vos magasins préférés!"
+            ctaText="Voir toutes les offres"
             onCtaClick={() => {
               console.log("Redirecting to all offers...");
             }}

@@ -17,6 +17,9 @@ interface SuggestionCardProps {
 export function SuggestionCard({ user }: SuggestionCardProps) {
   const [loading, setLoading] = useState(false);
   const [friendship, setFriendship] = useState(user.friendship);
+  const subtitle = friendship?.status === 'PENDING'
+    ? (friendship.direction === 'RECEIVED' ? "Demande d'amitié" : 'Invitation envoyée')
+    : "Suggestion d'ami";
 
   const handleSendRequest = async () => {
     setLoading(true);
@@ -75,6 +78,7 @@ export function SuggestionCard({ user }: SuggestionCardProps) {
             )}
           </div>
           <div className="flex flex-col gap-1">
+            <span className="text-sm text-muted-foreground font-semibold">{subtitle}</span>
             {user.city && (
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 <MapPin className="h-3.5 w-3.5" />

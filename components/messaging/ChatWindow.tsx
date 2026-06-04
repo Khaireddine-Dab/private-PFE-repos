@@ -256,7 +256,7 @@ export function ChatWindow({ partner, messages, currentUserId, onSendMessage, on
             <AvatarFallback>{partner.full_name?.substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div>
-            <h3 className="font-semibold text-sm leading-tight">{partner.full_name}</h3>
+            <h3 className="font-semibold text-sm leading-tight text-white">{partner.full_name}</h3>
             <span className="text-[10px] text-green-500 font-medium flex items-center gap-1">
               <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
               En ligne

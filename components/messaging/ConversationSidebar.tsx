@@ -116,10 +116,10 @@ export function ConversationSidebar({ activeId: propsActiveId, onSelect }: Conve
               <div key={req.id} className="flex items-center gap-3 bg-background/50 p-2 rounded-xl border border-border/10">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={req.sender.avatar_url} />
-                  <AvatarFallback>{req.sender.full_name?.substring(0,2)}</AvatarFallback>
+                  <AvatarFallback>{req.sender.full_name?.substring(0,2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold truncate">{req.sender.full_name}</p>
+                  <p className="text-xs font-semibold truncate text-foreground">{req.sender.full_name}</p>
                 </div>
                 <div className="flex items-center gap-1">
                   <Button 

@@ -86,6 +86,8 @@ export default function ShortAdsSection() {
   const [shortAds, setShortAds] = useState<ShortAd[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  /** ID of the card currently being hovered (null = none) */
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchReels = async () => {
@@ -108,6 +110,7 @@ export default function ShortAdsSection() {
   }, []);
 
   const handleAdClick = (adId: string) => {
+    console.log('ShortAdsSection: clicked ad', adId)
     router.push(`/discover?reelId=${adId}`);
   };
 
@@ -155,23 +158,39 @@ export default function ShortAdsSection() {
             ) : (
               shortAds.map((ad) => (
               <Story key={ad.id} isNew={ad.isNew} className="basis-[150px]">
-                <div onClick={() => handleAdClick(ad.id)} className="w-full">
+                <div
+                  onClick={() => handleAdClick(ad.id)}
+                  onMouseEnter={() => setHoveredId(ad.id)}
+                  onMouseLeave={() => setHoveredId(null)}
+                  className="w-full cursor-pointer"
+                >
                   {/* ── Thumbnail ── */}
                   <StoryThumbnail>
                     {ad.mediaType === 'video' ? (
                       <StoryVideo 
                         src={ad.image} 
                         poster={ad.thumbnailUrl || undefined}
+                        playing={hoveredId === ad.id}
                       />
                     ) : (
-                      <StoryImage alt={`${ad.brand} short ad`} src={ad.thumbnailUrl || ad.image} />
+                      <>
+                        <StoryImage alt={`${ad.brand} short ad`} src={ad.thumbnailUrl || ad.image} />
+                        {/* Subtle play-icon overlay visible on hover for image reels */}
+                        {hoveredId === ad.id && (
+                          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 transition-opacity duration-200">
+                            <div className="w-14 h-14 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center shadow-xl animate-pulse">
+                              <svg className="w-6 h-6 text-white fill-white translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                     <StoryOverlay side="top" className="h-14 from-black/60" />
                     <StoryOverlay side="bottom" className="h-20 from-black/70" />
-                    <span className="absolute bottom-2 left-2 z-20 inline-block px-1.5 py-0.5 rounded-md text-[10px] font-black bg-[#22C55E] text-[#0A0A0A] shadow-md">
+                    <span className="absolute bottom-2 left-2 z-20 inline-block px-1.5 py-0.5 rounded-md text-[10px] font-black bg-[#22C55E] text-[#0A0A0A] shadow-md pointer-events-none">
                       {ad.discount}
                     </span>
-                    <StoryDuration>{ad.duration}</StoryDuration>
+                    <StoryDuration className="pointer-events-none">{ad.duration}</StoryDuration>
                   </StoryThumbnail>
 
                   {/* ── Info below thumbnail ── */}

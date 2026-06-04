@@ -62,6 +62,19 @@ export async function getFriendSuggestions(searchQuery?: string): Promise<UserSu
       };
     });
 
+    // 5. Order suggestions:
+    //   - Incoming friendship requests (PENDING, direction: RECEIVED)
+    //   - Sent invitations by current user (PENDING, direction: SENT)
+    //   - All other suggestions
+    enhancedSuggestions.sort((a, b) => {
+      const rank = (u: any) => {
+        if (u.friendship?.status === 'PENDING' && u.friendship.direction === 'RECEIVED') return 0;
+        if (u.friendship?.status === 'PENDING' && u.friendship.direction === 'SENT') return 1;
+        return 2;
+      };
+      return rank(a) - rank(b);
+    });
+
     return enhancedSuggestions;
   } catch (error) {
     console.error('Error fetching friend suggestions:', error);

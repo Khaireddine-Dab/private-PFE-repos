@@ -62,9 +62,9 @@ export function CallOverlay() {
 
         <div className="flex flex-col items-center p-10 text-center space-y-6">
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold tracking-tight">{partner.name}</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-white">{partner.name}</h2>
             <p className={cn(
-              "text-sm font-medium",
+              "text-sm font-medium text-white",
               status === 'CONNECTED' ? "text-green-500" : "text-muted-foreground animate-pulse"
             )}>
               {status === 'INCOMING' && 'Appel entrant...'}
