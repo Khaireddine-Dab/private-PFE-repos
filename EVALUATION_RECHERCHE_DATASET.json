@@ -1,0 +1,416 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "generated_date": "2026-06-03",
+    "total_queries": 50,
+    "description": "Dataset d'évaluation pour recherche sémantique - Phantom Marketplace v4.4"
+  },
+  "test_queries": [
+    {
+      "query_id": 1,
+      "query": "téléphone noir",
+      "language": "fr",
+      "expected_results": ["iPhone 13 Noir", "Samsung Galaxy A20 Noir", "Xiaomi 11T Noir"],
+      "relevant_product_ids": ["prod_iphone_001", "prod_samsung_001", "prod_xiaomi_001"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 2,
+      "query": "سباط احمر",
+      "language": "darija",
+      "expected_results": ["Robe rouge marocaine", "Takchita rouge brodée"],
+      "relevant_product_ids": ["prod_robe_001", "prod_takchita_001"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 3,
+      "query": "restaurant pas cher Tunis",
+      "language": "fr",
+      "expected_results": ["Resto du Coin Tunis", "La Cocotte Tunisienne", "Chez Mellouli"],
+      "relevant_product_ids": ["store_resto_001", "store_resto_002", "store_resto_003"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 4,
+      "query": "laptop gaming",
+      "language": "en",
+      "expected_results": ["ASUS ROG Gaming Laptop", "MSI GL65 Leopard", "Lenovo Legion 5"],
+      "relevant_product_ids": ["prod_laptop_001", "prod_laptop_002", "prod_laptop_003"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 5,
+      "query": "chaussures de sport femme",
+      "language": "fr",
+      "expected_results": ["Nike Air Force 1 Femme", "Adidas Ultraboost Femme", "Puma RS-X Femme"],
+      "relevant_product_ids": ["prod_shoes_001", "prod_shoes_002", "prod_shoes_003"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 6,
+      "query": "table de nuit bois",
+      "language": "fr",
+      "expected_results": ["Table de nuit en chêne", "Meuble en bois massif"],
+      "relevant_product_ids": ["prod_furniture_001", "prod_furniture_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 7,
+      "query": "café espresso machine",
+      "language": "mixed",
+      "expected_results": ["Machine à café Nespresso", "Espresso Maker Automatique"],
+      "relevant_product_ids": ["prod_coffee_001", "prod_coffee_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 8,
+      "query": "crème hydratante peau sensible",
+      "language": "fr",
+      "expected_results": ["Crème bio visage", "Hydratant dermatologique"],
+      "relevant_product_ids": ["prod_beauty_001", "prod_beauty_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 9,
+      "query": "coiffeur salon Sfax",
+      "language": "fr",
+      "expected_results": ["Salon Elite Sfax", "Coiffure Pro Sfax"],
+      "relevant_product_ids": ["store_salon_001", "store_salon_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 10,
+      "query": "كتاب الخيالة",
+      "language": "darija",
+      "expected_results": ["Livre fantaisie", "Roman d'aventure"],
+      "relevant_product_ids": ["prod_book_001", "prod_book_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 11,
+      "query": "guitare acoustique débutant",
+      "language": "fr",
+      "expected_results": ["Guitare 38\" acoustique", "Guitare classique pour enfants"],
+      "relevant_product_ids": ["prod_guitar_001", "prod_guitar_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 12,
+      "query": "vélo électrique 1000W",
+      "language": "fr",
+      "expected_results": ["E-bike Urban 1000W", "Vélo électrique tout terrain"],
+      "relevant_product_ids": ["prod_bike_001", "prod_bike_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 13,
+      "query": "cours de yoga en ligne",
+      "language": "fr",
+      "expected_results": ["Yoga Flow Online", "Session Vinyasa"],
+      "relevant_product_ids": ["store_yoga_001", "store_yoga_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 14,
+      "query": "montres de luxe Rolex",
+      "language": "fr",
+      "expected_results": ["Rolex Submariner", "Rolex Day-Date"],
+      "relevant_product_ids": ["prod_watch_001", "prod_watch_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 15,
+      "query": "réparation téléphone écran cassé",
+      "language": "fr",
+      "expected_results": ["Phone Repair Center", "Doctor Mobile"],
+      "relevant_product_ids": ["store_repair_001", "store_repair_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 16,
+      "query": "sac à dos voyageur 40L",
+      "language": "fr",
+      "expected_results": ["Osprey Farpoint 40", "Decathlon Trek 40"],
+      "relevant_product_ids": ["prod_bag_001", "prod_bag_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 17,
+      "query": "pizza livraison rapide",
+      "language": "fr",
+      "expected_results": ["Pizzeria Al Forno", "Domino's Pizza"],
+      "relevant_product_ids": ["store_pizza_001", "store_pizza_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 18,
+      "query": "caméra GoPro 4K",
+      "language": "fr",
+      "expected_results": ["GoPro Hero 11 Black", "GoPro Max"],
+      "relevant_product_ids": ["prod_camera_001", "prod_camera_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 19,
+      "query": "écran OLED 65 pouces",
+      "language": "fr",
+      "expected_results": ["LG C3 OLED 65\"", "Samsung QN65S90D"],
+      "relevant_product_ids": ["prod_tv_001", "prod_tv_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 20,
+      "query": "chaise ergonomique bureau",
+      "language": "fr",
+      "expected_results": ["Herman Miller Aeron", "Steelcase Leap"],
+      "relevant_product_ids": ["prod_chair_001", "prod_chair_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 21,
+      "query": "enceinte Bluetooth portable JBL",
+      "language": "fr",
+      "expected_results": ["JBL Flip 6", "JBL Charge 5"],
+      "relevant_product_ids": ["prod_speaker_001", "prod_speaker_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 22,
+      "query": "casque audio sans fil Sony",
+      "language": "fr",
+      "expected_results": ["Sony WH-1000XM5", "Sony WH-CH720"],
+      "relevant_product_ids": ["prod_headphones_001", "prod_headphones_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 23,
+      "query": "trainer fitness personnel",
+      "language": "fr",
+      "expected_results": ["Coach Fitness Pro", "Personal Trainer Certification"],
+      "relevant_product_ids": ["store_training_001", "store_training_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 24,
+      "query": "drone DJI professionnel",
+      "language": "fr",
+      "expected_results": ["DJI Air 3S", "DJI Mavic 3"],
+      "relevant_product_ids": ["prod_drone_001", "prod_drone_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 25,
+      "query": "appareil photo Nikon DSLR",
+      "language": "fr",
+      "expected_results": ["Nikon D850", "Nikon Z6 III"],
+      "relevant_product_ids": ["prod_dslr_001", "prod_dslr_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 26,
+      "query": "chauffage électrique radiateur",
+      "language": "fr",
+      "expected_results": ["Radiateur convecteur 2000W", "Radiateur électrique soufflant"],
+      "relevant_product_ids": ["prod_heater_001", "prod_heater_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 27,
+      "query": "climatiseur split inverter",
+      "language": "fr",
+      "expected_results": ["LG Deluxe 18000 BTU", "Daikin Inverter"],
+      "relevant_product_ids": ["prod_ac_001", "prod_ac_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 28,
+      "query": "réfrigérateur French door",
+      "language": "fr",
+      "expected_results": ["Samsung RF28R7351SR", "LG LRMVS3006S"],
+      "relevant_product_ids": ["prod_fridge_001", "prod_fridge_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 29,
+      "query": "lave-linge automatique 8kg",
+      "language": "fr",
+      "expected_results": ["Electrolux EWF9025BQWA", "Hotpoint NLCD 945"],
+      "relevant_product_ids": ["prod_washer_001", "prod_washer_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 30,
+      "query": "four micro-ondes grill",
+      "language": "fr",
+      "expected_results": ["LG MH7765CPS", "Whirlpool JT 369 SL"],
+      "relevant_product_ids": ["prod_microwave_001", "prod_microwave_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 31,
+      "query": "robot aspirateur Roomba",
+      "language": "fr",
+      "expected_results": ["iRobot Roomba j7+", "iRobot Roomba Combo j9+"],
+      "relevant_product_ids": ["prod_robot_001", "prod_robot_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 32,
+      "query": "blender mixeur smoothie",
+      "language": "fr",
+      "expected_results": ["Vitamix A3500", "Ninja BL610"],
+      "relevant_product_ids": ["prod_blender_001", "prod_blender_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 33,
+      "query": "cafetière filtre programmable",
+      "language": "fr",
+      "expected_results": ["Philips HD7546/20", "Melitta Look Deluxe"],
+      "relevant_product_ids": ["prod_coffeemaker_001", "prod_coffeemaker_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 34,
+      "query": "grille-pain toaster 4 fentes",
+      "language": "fr",
+      "expected_results": ["Philips HD2640/20", "Bosch TAT7S25"],
+      "relevant_product_ids": ["prod_toaster_001", "prod_toaster_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 35,
+      "query": "bouilloire électrique 1.7L",
+      "language": "fr",
+      "expected_results": ["Philips HD9320/20", "Swan SK14210"],
+      "relevant_product_ids": ["prod_kettle_001", "prod_kettle_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 36,
+      "query": "fer à repasser vapeur",
+      "language": "fr",
+      "expected_results": ["Calor Ultraglide FV5715", "Philips GC4881/47"],
+      "relevant_product_ids": ["prod_iron_001", "prod_iron_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 37,
+      "query": "aspirateur traîneau puissant",
+      "language": "fr",
+      "expected_results": ["Dyson V15 Detect", "Bissell Pet Hair Eraser"],
+      "relevant_product_ids": ["prod_vacuum_001", "prod_vacuum_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 38,
+      "query": "sèche-cheveux ionic",
+      "language": "fr",
+      "expected_results": ["Dyson Supersonic HD07", "GHD Helios"],
+      "relevant_product_ids": ["prod_hairdryer_001", "prod_hairdryer_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 39,
+      "query": "brosse à dents électrique",
+      "language": "fr",
+      "expected_results": ["Oral-B Genius X", "Sonicare DiamondCare"],
+      "relevant_product_ids": ["prod_toothbrush_001", "prod_toothbrush_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 40,
+      "query": "balance pèse personne connectée",
+      "language": "fr",
+      "expected_results": ["Withings Body+", "Nokia Body Cardio"],
+      "relevant_product_ids": ["prod_scale_001", "prod_scale_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 41,
+      "query": "tensiomètre automatique bras",
+      "language": "fr",
+      "expected_results": ["Omron HEM-7120", "Beurer BM57"],
+      "relevant_product_ids": ["prod_bp_001", "prod_bp_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 42,
+      "query": "thermomètre infrarouge sans contact",
+      "language": "fr",
+      "expected_results": ["Beurer FT95", "FLIR ONE Pro"],
+      "relevant_product_ids": ["prod_thermometer_001", "prod_thermometer_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 43,
+      "query": "humidificateur air chambre",
+      "language": "fr",
+      "expected_results": ["Levoit LV600S", "Pure Enrichment MistAire"],
+      "relevant_product_ids": ["prod_humidifier_001", "prod_humidifier_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 44,
+      "query": "purificateur air HEPA",
+      "language": "fr",
+      "expected_results": ["Levoit Core 400S", "Coway AP-1512HHS"],
+      "relevant_product_ids": ["prod_purifier_001", "prod_purifier_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 45,
+      "query": "diffuseur huiles essentielles LED",
+      "language": "fr",
+      "expected_results": ["InnoGear Aroma Diffuser", "Amir 500ml Ultrasonic"],
+      "relevant_product_ids": ["prod_diffuser_001", "prod_diffuser_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 46,
+      "query": "lampe LED intelligente Philips Hue",
+      "language": "fr",
+      "expected_results": ["Philips Hue Bridge", "Philips Hue Go"],
+      "relevant_product_ids": ["prod_light_001", "prod_light_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 47,
+      "query": "caméra surveillance WiFi",
+      "language": "fr",
+      "expected_results": ["Wyze Cam v3", "TP-Link Tapo C310"],
+      "relevant_product_ids": ["prod_security_001", "prod_security_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 48,
+      "query": "sonnette vidéo intelligente",
+      "language": "fr",
+      "expected_results": ["Ring Video Doorbell", "Logitech Circle View"],
+      "relevant_product_ids": ["prod_doorbell_001", "prod_doorbell_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 49,
+      "query": "serrure connectée Bluetooth",
+      "language": "fr",
+      "expected_results": ["Level Lock", "Nuki Smart Lock"],
+      "relevant_product_ids": ["prod_lock_001", "prod_lock_002"],
+      "expected_relevance": "RELEVANT"
+    },
+    {
+      "query_id": 50,
+      "query": "thermostat programmable Nest",
+      "language": "fr",
+      "expected_results": ["Google Nest Learning Thermostat", "Ecobee SmartThermostat"],
+      "relevant_product_ids": ["prod_thermostat_001", "prod_thermostat_002"],
+      "expected_relevance": "RELEVANT"
+    }
+  ],
+  "summary": {
+    "total_queries": 50,
+    "languages": ["fr", "darija", "en", "mixed"],
+    "all_relevant": true,
+    "description": "50 requêtes variées testant recherche FR, Darija, et multilingue"
+  }
+}

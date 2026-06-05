@@ -1,0 +1,118 @@
+{
+  "timestamp": "2026-06-01T22:44:50.595Z",
+  "test_type": "REAL_DATA_FRAUD_DETECTION",
+  "orders_analyzed": 6,
+  "summary": {
+    "safe": 6,
+    "suspicious": 0,
+    "high_risk": 0,
+    "total": 6
+  },
+  "results": [
+    {
+      "order_id": 16,
+      "customer_email": "abderrahmenebdelli18@gmail.com",
+      "store_name": "Restaurant El Bacha",
+      "amount": 25,
+      "analysis": {
+        "score": 0,
+        "level": "safe",
+        "signals": [],
+        "recommendation": "approve",
+        "latency": 1401.04,
+        "checked_at": "2026-06-01T22:44:41.326Z"
+      }
+    },
+    {
+      "order_id": 15,
+      "customer_email": "abderrahmenebdelli18@gmail.com",
+      "store_name": "Restaurant El Bacha",
+      "amount": 35,
+      "analysis": {
+        "score": 0,
+        "level": "safe",
+        "signals": [],
+        "recommendation": "approve",
+        "latency": 1585.26,
+        "checked_at": "2026-06-01T22:44:42.912Z"
+      }
+    },
+    {
+      "order_id": 14,
+      "customer_email": "khaireddine@gmail.com",
+      "store_name": "Restaurant El Bacha",
+      "amount": 175,
+      "analysis": {
+        "score": 15,
+        "level": "safe",
+        "signals": [
+          {
+            "type": "invalid_address",
+            "severity": "medium",
+            "description": "Adresse de livraison incomplète ou invalide",
+            "weight": 15
+          }
+        ],
+        "recommendation": "approve",
+        "latency": 1205.75,
+        "checked_at": "2026-06-01T22:44:44.118Z"
+      }
+    },
+    {
+      "order_id": 13,
+      "customer_email": "khaireddine@gmail.com",
+      "store_name": "Restaurant El Bacha",
+      "amount": 70,
+      "analysis": {
+        "score": 15,
+        "level": "safe",
+        "signals": [
+          {
+            "type": "invalid_address",
+            "severity": "medium",
+            "description": "Adresse de livraison incomplète ou invalide",
+            "weight": 15
+          }
+        ],
+        "recommendation": "approve",
+        "latency": 1274.43,
+        "checked_at": "2026-06-01T22:44:45.392Z"
+      }
+    },
+    {
+      "order_id": 12,
+      "customer_email": "dabkhairdin@gmail.com",
+      "store_name": "Restaurant El Bacha",
+      "amount": 35,
+      "analysis": {
+        "score": 0,
+        "level": "safe",
+        "signals": [],
+        "recommendation": "approve",
+        "latency": 1267.47,
+        "checked_at": "2026-06-01T22:44:46.660Z"
+      }
+    },
+    {
+      "order_id": 11,
+      "customer_email": "Unknown",
+      "store_name": "Restaurant El Bacha",
+      "amount": 35,
+      "analysis": {
+        "score": 15,
+        "level": "safe",
+        "signals": [
+          {
+            "type": "invalid_address",
+            "severity": "medium",
+            "description": "Adresse de livraison incomplète ou invalide",
+            "weight": 15
+          }
+        ],
+        "recommendation": "approve",
+        "latency": 1255.88,
+        "checked_at": "2026-06-01T22:44:47.916Z"
+      }
+    }
+  ]
+}

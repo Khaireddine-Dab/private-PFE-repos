@@ -242,7 +242,7 @@ function SearchPageContent() {
   // ✅ UPDATED: When user clicks a service - track it
   const handleServiceClick = (item: SearchResultItem, position: number) => {
     trackClick('search', String(item.id), position, item.stores?.id ? String(item.stores.id) : undefined);
-    router.push(`/merchants/business/${item.id}`);
+    router.push(`/merchants/service/${item.id}`);
   };
 
   const toggleCompare = (id: number) =>

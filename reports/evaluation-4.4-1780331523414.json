@@ -1,0 +1,38 @@
+{
+  "timestamp": "2026-06-01T16:32:03.408Z",
+  "results": {
+    "fraudDetection": {
+      "name": "Fraud Detection",
+      "totalTests": 10,
+      "passed": 6,
+      "precision": "100.00",
+      "recall": "33.33",
+      "f1Score": "50.00",
+      "specificity": "100.00",
+      "avgLatencyMs": "31.80"
+    },
+    "search": {
+      "name": "Search",
+      "avgLatencyMs": "88.71",
+      "p50LatencyMs": "90.27",
+      "p95LatencyMs": "116.72",
+      "p99LatencyMs": "116.72",
+      "minLatencyMs": "70.61",
+      "maxLatencyMs": "116.72"
+    },
+    "ranking": {
+      "name": "Ranking",
+      "avgLatencyMs": "21.74",
+      "p50LatencyMs": "20.12",
+      "p95LatencyMs": "34.04",
+      "p99LatencyMs": "34.04",
+      "minLatencyMs": "15.84",
+      "maxLatencyMs": "34.04"
+    }
+  },
+  "summary": {
+    "status": "EXECUTION_COMPLETE",
+    "testsRun": 3,
+    "timestamp": "2026-06-01T16:32:03.408Z"
+  }
+}
