@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Paperclip, Smile, Search, Loader2, Check, MoreHorizontal, Mail, MessageSquare } from 'lucide-react';
+import { Send, Smile, Search, Loader2, Check, MoreHorizontal, Mail, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -245,8 +245,8 @@ export default function SupportMessagesSection({ storeId, initialTicketId }: Sup
         </div>
         
         <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="bg-white/5 p-1 rounded-2xl border border-white/10">
-          <TabsList className="bg-transparent border-none">
-            <TabsTrigger value="tickets" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white font-bold text-xs px-6 py-2">
+            <TabsList className="bg-transparent border-none">
+            <TabsTrigger value="tickets" className="rounded-xl data-[state=active]:bg-gradient-to-br data-[state=active]:from-slate-700 data-[state=active]:to-slate-900 data-[state=active]:text-white font-bold text-xs px-6 py-2">
               Support RO2YA
             </TabsTrigger>
             <TabsTrigger value="clients" className="rounded-xl data-[state=active]:bg-red-500 data-[state=active]:text-white font-bold text-xs px-6 py-2">
@@ -261,8 +261,8 @@ export default function SupportMessagesSection({ storeId, initialTicketId }: Sup
         <Card className="flex flex-col border border-white/5 bg-white/5 backdrop-blur-2xl shadow-2xl overflow-hidden rounded-[2.5rem]">
           <div className="p-5 border-b border-white/5 bg-white/5">
             <div className="relative">
-                <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                <Input placeholder="Chercher une discussion..." className="pl-10 h-11 rounded-2xl bg-white/5 border-none text-xs shadow-inner" />
+                <Search className="absolute left-3 top-3 w-4 h-4 text-white/70" />
+                <Input placeholder="Chercher une discussion..." className="pl-10 h-11 rounded-2xl bg-white/5 border-none text-xs shadow-inner text-white placeholder:text-white/60" />
             </div>
           </div>
           
@@ -281,7 +281,7 @@ export default function SupportMessagesSection({ storeId, initialTicketId }: Sup
                     className={cn(
                         "w-full p-4 rounded-2xl text-left transition-all relative group flex flex-col gap-1 border border-transparent",
                         selectedTicketId === ticket.id 
-                            ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20' 
+                            ? 'bg-gradient-to-br from-slate-800 to-slate-900 text-white shadow-xl shadow-black/30' 
                             : 'hover:bg-white/5 hover:border-white/5'
                     )}
                   >
@@ -320,22 +320,22 @@ export default function SupportMessagesSection({ storeId, initialTicketId }: Sup
                     )}
                   >
                     <div className="w-10 h-10 rounded-xl bg-white/10 flex-shrink-0 overflow-hidden shadow-inner">
-                        {conv.partner_avatar ? (
-                            <img src={conv.partner_avatar} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center font-black text-xs">
-                                {conv.partner_name[0]}
-                            </div>
-                        )}
+                      {conv.partner_avatar ? (
+                        <img src={conv.partner_avatar} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center font-black text-xs text-white/90">
+                          {conv.partner_name?.[0] ?? '?'}
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                            <h4 className="font-bold text-xs truncate">{conv.partner_name}</h4>
-                            {conv.unread && <div className="w-2 h-2 rounded-full bg-white animate-pulse" />}
-                        </div>
-                        <p className={cn("text-[10px] truncate opacity-60", selectedPartnerId === conv.id ? "text-white" : "text-muted-foreground")}>
-                            {conv.last_message}
-                        </p>
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-xs truncate text-white">{conv.partner_name}</h4>
+                        {conv.unread && <div className="w-2 h-2 rounded-full bg-white animate-pulse" />}
+                      </div>
+                      <p className={cn("text-[10px] truncate", selectedPartnerId === conv.id ? "text-white" : "text-white/75 opacity-80")}>
+                        {conv.last_message}
+                      </p>
                     </div>
                   </button>
                 ))
@@ -352,11 +352,11 @@ export default function SupportMessagesSection({ storeId, initialTicketId }: Sup
                 "w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-2xl ring-1 ring-white/10",
                 activeTab === 'tickets' ? "bg-gradient-to-br from-primary to-blue-900" : "bg-gradient-to-br from-red-500 to-rose-900"
               )}>
-                  {activeTab === 'tickets' ? (selectedTicket?.subject?.substring(0,2).toUpperCase() || '?') : (selectedConversation?.partner_name[0] || '?')}
+                  {activeTab === 'tickets' ? (selectedTicket?.subject?.substring(0,2).toUpperCase() || '?') : (selectedConversation?.partner_name?.[0] ?? '?')}
               </div>
               <div>
-                <h3 className="font-black text-sm text-foreground tracking-tight">
-                    {activeTab === 'tickets' ? (selectedTicket?.subject || 'Ticket Support') : (selectedConversation?.partner_name || 'Discussion Client')}
+                <h3 className="font-black text-sm text-white tracking-tight">
+                  {activeTab === 'tickets' ? (selectedTicket?.subject || 'Ticket Support') : (selectedConversation?.partner_name || 'Discussion Client')}
                 </h3>
                 <div className="flex items-center gap-2 mt-0.5">
                     <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
@@ -369,7 +369,7 @@ export default function SupportMessagesSection({ storeId, initialTicketId }: Sup
           </header>
 
           <main 
-            className="flex-1 overflow-y-auto p-8 space-y-8 bg-[#07090e] custom-scrollbar relative" 
+            className="flex-1 overflow-y-auto p-8 space-y-8 bg-[#07090e] custom-scrollbar relative text-white" 
             ref={scrollRef}
           >
             <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
@@ -418,9 +418,7 @@ export default function SupportMessagesSection({ storeId, initialTicketId }: Sup
 
           <footer className="p-6 bg-card/60 backdrop-blur-3xl border-t border-white/5">
             <div className="flex gap-4 items-center bg-white/5 p-2 rounded-[1.5rem] border border-white/5 focus-within:ring-2 focus-within:ring-primary/20 transition-all shadow-inner">
-              <Button size="icon" variant="ghost" className="rounded-xl h-12 w-12 hover:bg-white/10 shrink-0 text-muted-foreground hover:text-white">
-                <Paperclip className="w-5 h-5" />
-              </Button>
+              {/* Attachment button removed per design request */}
               <input
                 type="text"
                 value={messageText}
@@ -428,15 +426,15 @@ export default function SupportMessagesSection({ storeId, initialTicketId }: Sup
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Tapez votre message ici..."
                 disabled={((activeTab === 'tickets' && !selectedTicketId) || (activeTab === 'clients' && !selectedPartnerId)) || isSending}
-                className="flex-1 bg-transparent border-none px-4 h-12 text-sm font-bold focus:outline-none disabled:opacity-50 placeholder:text-muted-foreground/30"
+                className="flex-1 bg-transparent border-none px-4 h-12 text-sm font-bold focus:outline-none disabled:opacity-50 text-white placeholder:text-white/60"
               />
-              <Button 
+                <Button 
                 type="button"
                 onClick={handleSendMessage} 
                 disabled={((activeTab === 'tickets' && !selectedTicketId) || (activeTab === 'clients' && !selectedPartnerId)) || isSending || !messageText.trim()}
                 className={cn(
                     "rounded-2xl h-12 px-8 font-black text-xs uppercase tracking-widest shadow-2xl transition-all shrink-0 active:scale-95",
-                    activeTab === 'tickets' ? "bg-primary text-white shadow-primary/30" : "bg-red-500 text-white shadow-red-500/30"
+                    activeTab === 'tickets' ? "bg-sky-600 text-white shadow-sky-600/30" : "bg-red-500 text-white shadow-red-500/30"
                 )}
               >
                 {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 mr-2" />}

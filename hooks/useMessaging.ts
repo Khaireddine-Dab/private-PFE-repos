@@ -165,9 +165,35 @@ export function useMessaging() {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      const filteredMessages = data?.filter((msg: any) => 
+      let filteredMessages = data?.filter((msg: any) =>
         !msg.metadata?.deleted_for?.includes(currentUser.id)
       ) || [];
+
+      // Prefer store display name/avatar when present in metadata or when chat_type=store
+      filteredMessages = await Promise.all(filteredMessages.map(async (msg: any) => {
+        try {
+          if (msg.metadata?.sender_display_name) {
+            msg.sender = msg.sender || {};
+            msg.sender.full_name = msg.metadata.sender_display_name;
+            if (msg.metadata.sender_display_avatar) msg.sender.avatar_url = msg.metadata.sender_display_avatar;
+          } else if (msg.metadata?.chat_type === 'store' && msg.metadata?.store_id) {
+            const { data: store } = await supabase
+              .from('stores')
+              .select('id, name, logo_url, owner_id')
+              .eq('id', msg.metadata.store_id)
+              .maybeSingle();
+            if (store && msg.sender_id === store.owner_id) {
+              msg.sender = msg.sender || {};
+              msg.sender.full_name = store.name;
+              if (store.logo_url) msg.sender.avatar_url = store.logo_url;
+            }
+          }
+        } catch (e) {
+          // ignore store lookup issues
+        }
+        return msg;
+      }));
+
       setMessages(filteredMessages);
 
       // Optimistic local update
@@ -316,7 +342,27 @@ export function useMessaging() {
         .single();
 
       if (error) throw error;
-      
+
+      // If this is a store chat and the sender is the store owner, annotate sender display fields
+      try {
+        if (enrichedMetadata?.chat_type === 'store' && enrichedMetadata?.store_id) {
+          const { data: store } = await supabase
+            .from('stores')
+            .select('id, owner_id, name, logo_url')
+            .eq('id', enrichedMetadata.store_id)
+            .maybeSingle();
+          if (store && currentUser.id === store.owner_id) {
+            (data as any).sender = (data as any).sender || {};
+            (data as any).sender.full_name = store.name;
+            if (store.logo_url) (data as any).sender.avatar_url = store.logo_url;
+            // Also persist a lightweight display override in metadata for realtime consumers
+            (data as any).metadata = { ...(data as any).metadata, sender_display_name: store.name, sender_display_avatar: store.logo_url };
+          }
+        }
+      } catch (e) {
+        // ignore store lookup failure
+      }
+
       addMessage(data);
       fetchConversations();
 
@@ -362,31 +408,52 @@ export function useMessaging() {
         filter: `receiver_id=eq.${currentUser.id}`
       }, (payload) => {
         const newMessage = payload.new as Message;
-        
-        // Show toast if window is closed or minimized, or if it's from another partner
-        if (!isOpen || isMinimized || newMessage.sender_id !== activePartnerId) {
-          toast('Nouveau message reçu', {
-              description: newMessage.content.substring(0, 50) + '...',
-              action: {
-                label: 'Voir',
-                onClick: () => {
-                  setActivePartnerId(newMessage.sender_id);
-                  setIsOpen(true);
-                },
-              },
-          });
-        }
+        (async () => {
+          try {
+            // If message carries an explicit sender display override, use it
+            if (newMessage?.metadata?.sender_display_name) {
+              newMessage.sender = newMessage.sender || {};
+              newMessage.sender.full_name = newMessage.metadata.sender_display_name;
+              if (newMessage.metadata.sender_display_avatar) newMessage.sender.avatar_url = newMessage.metadata.sender_display_avatar;
+            } else if (newMessage?.metadata?.chat_type === 'store' && newMessage?.metadata?.store_id) {
+              const { data: store } = await supabase
+                .from('stores')
+                .select('id, owner_id, name, logo_url')
+                .eq('id', newMessage.metadata.store_id)
+                .maybeSingle();
+              if (store && newMessage.sender_id === store.owner_id) {
+                newMessage.sender = newMessage.sender || {};
+                newMessage.sender.full_name = store.name;
+                if (store.logo_url) newMessage.sender.avatar_url = store.logo_url;
+              }
+            }
+          } catch (e) {
+            // ignore
+          }
 
-        fetchConversations();
-        
-        // If the new message is from the active partner, add it to current messages
-        if (newMessage.sender_id === activePartnerId) {
+          // Show toast if window is closed or minimized, or if it's from another partner
+          if (!isOpen || isMinimized || newMessage.sender_id !== activePartnerId) {
+            toast('Nouveau message reçu', {
+                description: newMessage.content.substring(0, 50) + '...',
+                action: {
+                  label: 'Voir',
+                  onClick: () => {
+                    setActivePartnerId(newMessage.sender_id);
+                    setIsOpen(true);
+                  },
+                },
+            });
+          }
+
+          fetchConversations();
+
+          if (newMessage.sender_id === activePartnerId) {
             addMessage(newMessage);
-            // Auto-mark as read if window is active
             if (isOpen && !isMinimized) {
               supabase.from('messages').update({ is_read: true }).eq('id', newMessage.id).then();
             }
-        }
+          }
+        })();
       })
       .on('postgres_changes', {
         event: 'UPDATE',

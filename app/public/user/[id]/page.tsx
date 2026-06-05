@@ -5,8 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPin, Calendar, Star, Award, Shield, Share2, Loader2,
-  MessageSquare, ShoppingBag, BadgeCheck, Users, ArrowLeft,
-  Copy, Twitter, Facebook, Linkedin, User,
+  MessageSquare, ShoppingBag, BadgeCheck, Users, ArrowLeft, User,
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -17,6 +16,7 @@ import PublicReviewCard from '@/components/profile/PublicReviewCard';
 import PublicBadge from '@/components/profile/PublicBadge';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { ShareBusinessButton } from '@/components/ShareBusinessButton';
 
 // ─── Contact Button ────────────────────────────────────────────────────────
 function ContactButton({ userId }: { userId: string }) {
@@ -190,7 +190,6 @@ export default function PublicUserProfilePage() {
   const [data,      setData]      = useState<any>(null);
   const [loading,   setLoading]   = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('reviews');
-  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -220,19 +219,19 @@ export default function PublicUserProfilePage() {
   if (!data) return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
-      <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 text-center">
-        <div className="w-20 h-20 rounded-3xl bg-indigo-50 flex items-center justify-center">
-          <User className="w-9 h-9 text-indigo-300" />
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 text-center">
+          <div className="w-20 h-20 rounded-3xl bg-indigo-50 flex items-center justify-center">
+            <User className="w-9 h-9 text-indigo-300" />
+          </div>
+          <h2 className="text-2xl font-black text-gray-900">Utilisateur introuvable</h2>
+          <p className="text-sm text-gray-500 max-w-xs">Ce profil n'existe pas ou n'est plus disponible.</p>
+          <button
+            onClick={() => router.push('/')}
+            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" /> Retour à l'accueil
+          </button>
         </div>
-        <h2 className="text-2xl font-black text-gray-900">Utilisateur introuvable</h2>
-        <p className="text-sm text-gray-500 max-w-xs">Ce profil n'existe pas ou n'est plus disponible.</p>
-        <button
-          onClick={() => router.push('/')}
-          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition-all"
-        >
-          <ArrowLeft className="w-4 h-4" /> Retour à l'accueil
-        </button>
-      </div>
       <Footer />
     </div>
   );
@@ -242,21 +241,7 @@ export default function PublicUserProfilePage() {
   const initials   = user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
   const earnedCount = badges.filter((b: any) => b.earned).length;
 
-  const handleShare = (platform: string) => {
-    const text = `Découvrez le profil de ${user.name} sur Ro2ya !`;
-    if (platform === 'copy') {
-      navigator.clipboard.writeText(profileUrl);
-      toast.success('Lien copié !');
-    } else {
-      const urls: Record<string, string> = {
-        twitter:  `https://twitter.com/intent/tweet?url=${encodeURIComponent(profileUrl)}&text=${encodeURIComponent(text)}`,
-        facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(profileUrl)}`,
-        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(profileUrl)}`,
-      };
-      window.open(urls[platform], '_blank');
-    }
-    setShareOpen(false);
-  };
+  
 
   return (
     <div className="min-h-screen bg-[#f8f8f8]">
@@ -296,7 +281,7 @@ export default function PublicUserProfilePage() {
                   initial={{ scale: 0.85, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.4 }}
-                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-[1.75rem] border-4 border-white shadow-2xl overflow-hidden flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 flex-shrink-0"
+                  className="relative z-40 w-24 h-24 sm:w-28 sm:h-28 rounded-[1.75rem] border-4 border-white shadow-2xl overflow-hidden flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 flex-shrink-0"
                 >
                   {user.avatar_url
                     ? <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover"/>
@@ -338,41 +323,7 @@ export default function PublicUserProfilePage() {
                 <ContactButton userId={userId} />
                 
                 <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <button
-                      onClick={() => setShareOpen(v => !v)}
-                      className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl bg-white border border-gray-200 text-gray-700 hover:border-indigo-300 hover:text-indigo-600 transition-all shadow-sm h-11"
-                    >
-                      <Share2 className="w-3.5 h-3.5"/> Partager
-                    </button>
-                    <AnimatePresence>
-                      {shareOpen && (
-                        <motion.div
-                          initial={{ opacity:0, scale:0.94, y:-4 }}
-                          animate={{ opacity:1, scale:1, y:0 }}
-                          exit={{ opacity:0, scale:0.94, y:-4 }}
-                          transition={{ duration:0.15 }}
-                          className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 z-50 min-w-[180px]"
-                        >
-                          {[
-                            { id:'twitter',  Icon:Twitter,  label:'Twitter'      },
-                            { id:'facebook', Icon:Facebook, label:'Facebook'     },
-                            { id:'linkedin', Icon:Linkedin, label:'LinkedIn'     },
-                            { id:'copy',     Icon:Copy,     label:'Copier le lien'},
-                          ].map(s=>(
-                            <button
-                              key={s.id}
-                              onClick={()=>handleShare(s.id)}
-                              className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-gray-700 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
-                            >
-                              <s.Icon className="w-3.5 h-3.5"/>{s.label}
-                            </button>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
+                  <ShareBusinessButton businessName={user.name} businessUrl={profileUrl} />
                   {/* Block Button */}
                   <BlockUserButton userId={userId} />
                 </div>

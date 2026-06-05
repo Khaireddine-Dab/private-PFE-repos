@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Star, Gift } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { toast } from 'sonner'
 
 // TypeScript interface for each item in the carousel
 export interface CarouselItem {
@@ -29,7 +30,17 @@ export interface OffersCarouselProps {
 }
 
 // Sub-component for individual item cards in the carousel
-const ItemCard = ({ item }: { item: CarouselItem }) => (
+const ItemCard = ({ item }: { item: CarouselItem }) => {
+  const handleGetOffer = () => {
+    console.log('Get offer clicked', item.id)
+    try {
+      toast.success('Offre ajoutée à votre compte')
+    } catch (e) {
+      alert('Offre ajoutée à votre compte')
+    }
+  }
+
+  return (
   <motion.div
     className="group w-64 flex-shrink-0 cursor-pointer"
     whileHover={{ scale: 1.03 }}
@@ -69,10 +80,14 @@ const ItemCard = ({ item }: { item: CarouselItem }) => (
 )}
         </div>
         <p className="text-xs text-[#71717A]">/ night</p>
+        <div className="mt-4">
+          <Button onClick={handleGetOffer} className="w-full bg-[#22C55E] text-[#0A0A0A] hover:bg-[#16A34A]">Get offer</Button>
+        </div>
       </div>
     </div>
   </motion.div>
-);
+  )
+}
 
 // Main OffersCarousel component
 export const OffersCarousel = React.forwardRef<HTMLDivElement, OffersCarouselProps>(

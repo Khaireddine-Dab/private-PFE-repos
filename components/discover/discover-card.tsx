@@ -48,6 +48,8 @@ function DiscoverCardComponent({
   /** Reference to the root <article> — registered with the parent feed for scroll tracking. */
   const articleRef = useRef<HTMLElement>(null)
   const router = useRouter()
+  // Touch swipe tracking for opening comments on horizontal swipe-left
+  const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null)
 
   /**
    * L2 – Thumbnail placeholder state.
@@ -129,11 +131,28 @@ function DiscoverCardComponent({
     setIsDimmed(true)
     setTimeout(() => setIsDimmed(false), 200)
 
-    // Track like event → saved immediately to events table
+    // Track like event → saved immediately to events table (analytics)
     trackLike('reels', item.id, item.merchantId?.toString())
 
-    if (numericId) {
-      trackReelInteraction(numericId, 'like');
+    // Persist the like on the server and revert UI if it fails
+    try {
+      if (numericId) {
+        const res = await trackReelInteraction(numericId, 'like');
+        if (!res || (res as any).success === false) {
+          setLiked(false)
+          toast.error('Impossible d\u2019enregistrer le like. Réessayez.')
+        }
+      } else {
+        // If we don't have a numeric id, still attempt a best-effort call (fire-and-forget)
+        // to avoid losing the user's action in common cases; failure will be logged server-side.
+        trackReelInteraction(item.id as any, 'like').catch(() => {
+          setLiked(false)
+          toast.error('Impossible d\u2019enregistrer le like. Réessayez.')
+        })
+      }
+    } catch (err) {
+      setLiked(false)
+      toast.error('Impossible d\u2019enregistrer le like. Réessayez.')
     }
   }, [liked, numericId, item.id, item.merchantId, trackLike])
 
@@ -142,9 +161,25 @@ function DiscoverCardComponent({
       setLiked(false)
       // Track unlike event
       trackUnlike('reels', item.id, item.merchantId?.toString())
-      if (numericId) trackReelInteraction(numericId, 'like');
+      try {
+        if (numericId) {
+          const res = await trackReelInteraction(numericId, 'like');
+          if (!res || (res as any).success === false) {
+            setLiked(true)
+            toast.error('Impossible d\u2019enregistrer la suppression du like.')
+          }
+        } else {
+          trackReelInteraction(item.id as any, 'like').catch(() => {
+            setLiked(true)
+            toast.error('Impossible d\u2019enregistrer la suppression du like.')
+          })
+        }
+      } catch (err) {
+        setLiked(true)
+        toast.error('Impossible d\u2019enregistrer la suppression du like.')
+      }
     } else {
-      triggerLike()
+      await triggerLike()
     }
   }, [liked, triggerLike, numericId, item.id, item.merchantId, trackUnlike])
 
@@ -179,6 +214,45 @@ function DiscoverCardComponent({
       }
     }
   }, [triggerLike, item.allMedia])
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    const t = e.touches && e.touches[0]
+    if (t) touchStartRef.current = { x: t.clientX, y: t.clientY, t: Date.now() }
+  }, [])
+
+  const onTouchEnd = useCallback((e: React.TouchEvent) => {
+    try {
+      const start = touchStartRef.current
+      const changed = e.changedTouches && e.changedTouches[0]
+      if (!start || !changed) {
+        onMediaTouchEnd(e)
+        return
+      }
+
+      const dx = changed.clientX - start.x
+      const dy = changed.clientY - start.y
+      const adx = Math.abs(dx)
+      const ady = Math.abs(dy)
+
+      const HORIZONTAL_THRESHOLD = 60
+
+      // Consider it a horizontal swipe only when horizontal movement is dominant
+      if (adx > HORIZONTAL_THRESHOLD && adx > ady * 1.5) {
+        // Swipe left (negative dx) → open comments
+        if (dx < 0) {
+          setCommentsOpen(true)
+          // don't treat as tap/double-tap
+          touchStartRef.current = null
+          return
+        }
+      }
+
+      // Fallback to normal tap handling (single/double tap)
+      onMediaTouchEnd(e)
+    } catch (err) {
+      onMediaTouchEnd(e)
+    }
+  }, [onMediaTouchEnd])
 
   // Auto-advance for images slideshow
   useEffect(() => {
@@ -381,7 +455,8 @@ function DiscoverCardComponent({
         data-card-index={cardIndex}
         className="relative h-screen w-full snap-start snap-always overflow-hidden bg-black"
         onDoubleClick={triggerLike}
-        onTouchEnd={onMediaTouchEnd}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
       >
       <div 
         className={cn(

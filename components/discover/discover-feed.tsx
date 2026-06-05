@@ -33,9 +33,11 @@ export function DiscoverFeed({ isCompact = false }: { isCompact?: boolean }) {
     (index: number) => (el: HTMLElement | null) => {
       if (el) {
         cardRefsMap.current.set(index, el)
-        // If this element matches our target reelId, scroll to it immediately!
         const item = items[index]
+        console.log('DiscoverFeed: registered card', index, item?.id, 'search param reelId=', reelId)
+        // If this element matches our target reelId, scroll to it immediately!
         if (item && reelId && (item.id === reelId || item.id === `reel-${reelId}`)) {
+          console.log('DiscoverFeed: scrolling to matched card', index, item.id)
           setTimeout(() => {
             el.scrollIntoView({ behavior: 'auto', block: 'start' })
           }, 50)

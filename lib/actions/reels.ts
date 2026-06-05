@@ -103,16 +103,43 @@ export async function getBusinessReels(storeId: number) {
 }
 
 // Track a user interaction with a reel
-export async function trackReelInteraction(reelId: number, type: 'like' | 'save' | 'completion' | 'view' | 'share') {
+export async function trackReelInteraction(reelId: number | string, type: 'like' | 'save' | 'completion' | 'view' | 'share') {
     const supabase = createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) return { success: false, error: 'Non authentifié.' }
 
+    // Resolve numeric reel id from inputs like 'reel-123' or string IDs
+    let numericId: number | null = null
+    if (typeof reelId === 'number') numericId = reelId
+    else {
+        const match = String(reelId).match(/(\d+)$/)
+        if (match) numericId = parseInt(match[1], 10)
+    }
+
+    // Fallback: try to lookup by slug or exact match in DB
+    if (!numericId) {
+        try {
+            const { data: reelRow } = await (supabase as any)
+                .from('reels')
+                .select('id')
+                .or(`id.eq.${reelId},slug.eq.${reelId}`)
+                .maybeSingle()
+            if (reelRow && reelRow.id) numericId = reelRow.id
+        } catch (e) {
+            console.warn('Error resolving reel id for', reelId, e)
+        }
+    }
+
+    if (!numericId) {
+        console.warn('Could not resolve reel id from', reelId)
+        return { success: false, error: 'Invalid reel id' }
+    }
+
     // Ensure stats row exists for this reel
     await (supabase as any)
         .from('reel_stats')
-        .insert({ reel_id: reelId })
-        .select();
+        .insert({ reel_id: numericId })
+        .select()
 
     // Check if interaction already exists for like/save (not for completion which can be multiple)
     if (type === 'like' || type === 'save') {
@@ -120,9 +147,9 @@ export async function trackReelInteraction(reelId: number, type: 'like' | 'save'
             .from('user_interactions')
             .select('id')
             .eq('user_id', user.id)
-            .eq('reel_id', reelId)
+            .eq('reel_id', numericId)
             .eq('type', type)
-            .maybeSingle();
+            .maybeSingle()
             
         if (existing) {
             // Un-like or Un-save
@@ -130,9 +157,9 @@ export async function trackReelInteraction(reelId: number, type: 'like' | 'save'
             
             // Decrement the counter in the stats table
             if (type === 'like') {
-                await (supabase as any).rpc('increment_reel_like', { reel_id_input: reelId, x: -1 });
+                await (supabase as any).rpc('increment_reel_like', { reel_id_input: numericId, x: -1 });
             } else if (type === 'save') {
-                await (supabase as any).rpc('increment_reel_save', { reel_id_input: reelId, x: -1 });
+                await (supabase as any).rpc('increment_reel_save', { reel_id_input: numericId, x: -1 });
             }
             
             return { success: true, action: 'removed' };
@@ -143,7 +170,7 @@ export async function trackReelInteraction(reelId: number, type: 'like' | 'save'
         .from('user_interactions')
         .insert({
             user_id: user.id,
-            reel_id: reelId,
+            reel_id: numericId,
             type: type
         });
 
@@ -152,15 +179,20 @@ export async function trackReelInteraction(reelId: number, type: 'like' | 'save'
         return { success: false, error: error.message };
     }
 
-    // --- MISE À JOUR RÉELLE DES COMPTEURS ---
-    if (type === 'view') {
-        await (supabase as any).rpc('increment_reel_view', { reel_id_input: reelId, x: 1 });
-    } else if (type === 'like') {
-        await (supabase as any).rpc('increment_reel_like', { reel_id_input: reelId, x: 1 });
-    } else if (type === 'save') {
-        await (supabase as any).rpc('increment_reel_save', { reel_id_input: reelId, x: 1 });
-    } else if (type === 'share') {
-        await (supabase as any).rpc('increment_reel_click', { reel_id_input: reelId, x: 1 });
+    // --- Update counters atomically via RPCs ---
+    try {
+        if (type === 'view') {
+            await (supabase as any).rpc('increment_reel_view', { reel_id_input: numericId, x: 1 });
+        } else if (type === 'like') {
+            await (supabase as any).rpc('increment_reel_like', { reel_id_input: numericId, x: 1 });
+        } else if (type === 'save') {
+            await (supabase as any).rpc('increment_reel_save', { reel_id_input: numericId, x: 1 });
+        } else if (type === 'share') {
+            await (supabase as any).rpc('increment_reel_click', { reel_id_input: numericId, x: 1 });
+        }
+    } catch (e) {
+        console.error('Error updating reel counters:', e)
+        // We don't fail the whole interaction on counter update error
     }
 
     return { success: true, action: 'added' };
