@@ -11,10 +11,11 @@ export interface Offer {
   tag: string;
   title: string;
   description: string;
-  brandLogoSrc: string;
+  brandLogoSrc?: string | null;
   brandName: string;
   promoCode?: string;
   href: string;
+  storeId?: string | number;
 }
 
 // Props for the OfferCard component
@@ -23,10 +24,12 @@ interface OfferCardProps {
 }
 
 // The individual card component with hover animation
-const OfferCard = React.forwardRef<HTMLAnchorElement, OfferCardProps>(({ offer }: OfferCardProps, ref: React.ForwardedRef<HTMLAnchorElement>) => (
-  <motion.a
+const OfferCard = React.forwardRef<HTMLDivElement, OfferCardProps>(({ offer }: OfferCardProps, ref: React.ForwardedRef<HTMLDivElement>) => (
+  <motion.div
     ref={ref}
-    href={offer.href}
+    onClick={() => {
+      window.location.href = offer.href;
+    }}
     className="relative flex-shrink-0 w-[300px] h-[380px] rounded-2xl overflow-hidden group snap-start border border-[#2A2A2A] bg-[#1A1A1A] cursor-pointer"
     whileHover={{ scale: 1.03 }}
     whileTap={{ scale: 0.98 }}
@@ -54,21 +57,32 @@ const OfferCard = React.forwardRef<HTMLAnchorElement, OfferCardProps>(({ offer }
 
       {/* Footer */}
       <div className="flex items-center justify-between pt-4 border-t border-[#2A2A2A]">
-        <div className="flex items-center gap-3">
-          <img src={offer.brandLogoSrc} alt={`${offer.brandName} logo`} className="w-8 h-8 rounded-full bg-[#222222] border border-[#2A2A2A]" />
-          <div>
-            <p className="text-xs font-semibold text-[#FFFFFF]">{offer.brandName}</p>
-            {offer.promoCode && (
-              <p className="text-xs text-[#A1A1AA]">{offer.promoCode}</p>
-            )}
+        <div 
+          className="flex items-center gap-3 min-w-0 z-10 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (offer.storeId) {
+              window.location.href = `/merchants/business/${offer.storeId}`;
+            }
+          }}
+        >
+          {offer.brandLogoSrc ? (
+            <img src={offer.brandLogoSrc} alt={`${offer.brandName} logo`} className="w-8 h-8 rounded-full object-cover flex-shrink-0 bg-[#222222] border border-[#2A2A2A]" />
+          ) : (
+            <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] flex-shrink-0 bg-[#222222] border border-[#2A2A2A] text-white">
+              {offer.brandName.substring(0, 2).toUpperCase()}
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-[#FFFFFF] truncate">{offer.brandName}</p>
           </div>
         </div>
-        <div className="w-8 h-8 rounded-full bg-[#222222] border border-[#2A2A2A] flex items-center justify-center text-[#FFFFFF] transform transition-transform duration-300 group-hover:rotate-[-45deg] group-hover:bg-[#22C55E] group-hover:text-[#0A0A0A] group-hover:border-[#22C55E]">
+        <div className="w-8 h-8 rounded-full bg-[#22C55E] border border-[#22C55E] flex items-center justify-center text-[#0A0A0A] flex-shrink-0 transform transition-all duration-300 group-hover:rotate-[-45deg] group-hover:bg-[#4ade80] group-hover:border-[#4ade80]">
           <ArrowRight className="w-4 h-4" />
         </div>
       </div>
     </div>
-  </motion.a>
+  </motion.div>
 ));
 OfferCard.displayName = "OfferCard";
 

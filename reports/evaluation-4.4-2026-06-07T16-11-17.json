@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "timestamp": "2026-06-07T16:11:16.922Z",
+    "environment": "test",
+    "projectName": "Phantom Marketplace - Evaluation 4.4"
+  },
+  "sections": {
+    "fraudDetection": {
+      "confusionMatrix": {
+        "truePositives": 28,
+        "falsePositives": 3,
+        "falseNegatives": 2,
+        "trueNegatives": 137
+      },
+      "precision": 90.32,
+      "recall": 93.33,
+      "specificity": 97.86,
+      "f1Score": 91.8,
+      "rocAuc": 96.45,
+      "accuracy": 96.5,
+      "fraudDetectionRate": 93.33,
+      "falseAlarmRate": 2.14,
+      "thresholdOptimal": 50
+    },
+    "searchPerformance": {
+      "operationName": "Search",
+      "requestCount": 100,
+      "avgLatencyMs": 52.35,
+      "minLatencyMs": 18.42,
+      "maxLatencyMs": 154.78,
+      "p50LatencyMs": 48.92,
+      "p95LatencyMs": 118.65,
+      "p99LatencyMs": 142.3,
+      "throughputPerSec": 19.1,
+      "errorCount": 1,
+      "errorRate": 1
+    },
+    "rankingPerformance": {
+      "operationName": "Ranking",
+      "requestCount": 100,
+      "avgLatencyMs": 38.42,
+      "minLatencyMs": 12.15,
+      "maxLatencyMs": 98.54,
+      "p50LatencyMs": 35.78,
+      "p95LatencyMs": 82.4,
+      "p99LatencyMs": 94.2,
+      "throughputPerSec": 26.03,
+      "errorCount": 0,
+      "errorRate": 0
+    },
+    "systemCapacity": {
+      "estimatedDailyCapacity": 1903712,
+      "peakConcurrency": 25,
+      "recommendedCacheSize": "100MB"
+    }
+  },
+  "summary": {
+    "overallScore": 91.38,
+    "status": "EXCELLENT",
+    "recommendations": [
+      "✅ Toutes les métriques sont bonnes - Continuez le monitoring",
+      "✅ Système prêt pour production"
+    ]
+  }
+}

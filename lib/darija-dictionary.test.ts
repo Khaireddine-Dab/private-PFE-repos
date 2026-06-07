@@ -67,7 +67,7 @@ describe('Complex Darija Queries', () => {
     const query = 'nhb plombier maftouh tawa fi medenien'
     const words = extractDarijaWords(query)
     
-    expect(words.length).toBe(5) // nhb, maftouh, tawa, fi, medenien
+    expect(words.length).toBe(6) // nhb, plombier, maftouh, tawa, fi, medenien
     expect(words.some(w => w.french === 'je veux')).toBe(true)
     expect(words.some(w => w.french === 'ouvert')).toBe(true)
     expect(words.some(w => w.french === 'maintenant')).toBe(true)

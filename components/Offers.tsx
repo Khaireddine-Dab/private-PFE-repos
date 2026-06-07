@@ -33,10 +33,10 @@ export default function OfferCarouselDemo() {
           catégorie: items.category,
           title: items.name,
           description: items.description || `৳${items.price}`,
-          brandLogoSrc: items.stores?.logo_url || "https://images.unsplash.com/photo-1599305445671-97f00feacb58?q=80&w=200&auto=format&fit=crop",
+          brandLogoSrc: items.stores?.logo_url,
           brandName: items.stores?.name || "Shop",
-          promoCode: `PROMO${items.id}`,
-          href: `/product/${items.id}`,
+          href: items.item_type === 'SERVICE' ? `/merchants/service/${items.id}` : `/merchants/product/${items.id}`,
+          storeId: items.store_id,
         }));
 
         setOffers(mappedOffers);

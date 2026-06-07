@@ -70,7 +70,7 @@ const mapReelToShortAd = (reel: DiscoverFeedItem): ShortAd => ({
   tagline: reel.product,
   discount: reel.price,
   image: reel.image,
-  avatar: reel.image,
+  avatar: reel.storeLogoUrl || '',
   textColor: colorMap[reel.category] || 'text-slate-900',
   views: formatViewCount(reel.likes || 0),
   duration: '0:30',
@@ -198,7 +198,7 @@ export default function ShortAdsSection() {
                     <StoryAvatar
                       src={ad.avatar}
                       name={ad.brand}
-                      fallback={ad.brand[0]}
+                      fallback={ad.brand ? ad.brand.substring(0, 2).toUpperCase() : undefined}
                     />
                     <StoryMeta>
                       <StoryTitle className="text-[11px] leading-tight">{ad.tagline}</StoryTitle>

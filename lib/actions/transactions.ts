@@ -158,7 +158,8 @@ export async function getStoreTransactions(storeId: number): Promise<Transaction
   return transactionsData.map((t: any) => {
     const orderInfo = !t.booking_id ? orderMap.get(t.order_number) : null;
     const bookingInfo = t.booking_id ? bookingMap.get(t.booking_id) : null;
-    const fraud = orderInfo?.fraud || bookingInfo?.fraud;
+    const rawFraud = orderInfo?.fraud || bookingInfo?.fraud;
+    const fraud = Array.isArray(rawFraud) && rawFraud.length > 0 ? rawFraud[0] : null;
 
     return {
       id: t.id,
