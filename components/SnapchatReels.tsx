@@ -276,8 +276,15 @@ export default function SnapchatReels() {
                 {/* Content Container */}
                   <div className="absolute inset-0 p-5 flex flex-col justify-between">
                     <div className="flex justify-between items-start">
-                       <div className="px-4 py-1.5 rounded-2xl bg-white/10 backdrop-blur-2xl border border-white/20 shadow-xl overflow-hidden group/tag">
+                       <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-white/10 backdrop-blur-2xl border border-white/20 shadow-xl overflow-hidden group/tag">
                           <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover/tag:translate-x-full transition-transform duration-1000" />
+                          {story.store_logo ? (
+                            <img src={story.store_logo} alt={story.store_name} className="relative w-5 h-5 rounded-full object-cover flex-shrink-0 border border-white/20" />
+                          ) : (
+                            <div className="relative w-5 h-5 rounded-full flex items-center justify-center bg-white/20 border border-white/20 flex-shrink-0">
+                              <span className="text-white text-[7px] font-black">{story.store_name.substring(0, 2).toUpperCase()}</span>
+                            </div>
+                          )}
                           <span className="relative text-white text-[11px] font-black uppercase tracking-widest truncate max-w-[100px]">
                              {story.store_name}
                           </span>

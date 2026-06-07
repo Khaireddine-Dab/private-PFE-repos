@@ -100,7 +100,6 @@ export async function getProductById(id: number): Promise<ProductDetail | null> 
       )
     `)
     .eq('id', id)
-    .eq('item_type', 'PRODUCT')
     .neq('status', 'UNAVAILABLE')
     .single() as any;
 

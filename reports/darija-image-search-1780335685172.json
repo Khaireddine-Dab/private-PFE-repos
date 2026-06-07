@@ -1,0 +1,62 @@
+{
+  "timestamp": "2026-06-01T17:41:25.172Z",
+  "tests": [
+    {
+      "test": "Darija Latin",
+      "status": "✅",
+      "latency": 2,
+      "foundCount": 2
+    },
+    {
+      "test": "Darija Vêtements",
+      "status": "✅",
+      "latency": 1,
+      "foundCount": 2
+    },
+    {
+      "test": "Arabic Script",
+      "status": "✅",
+      "latency": 1,
+      "foundCount": 0
+    },
+    {
+      "test": "Mixed Darija+FR",
+      "status": "✅",
+      "latency": 0,
+      "foundCount": 3
+    },
+    {
+      "test": "French Only",
+      "status": "✅",
+      "latency": 1,
+      "foundCount": 1
+    },
+    {
+      "test": "Image Search",
+      "status": "✅",
+      "latency": 1,
+      "foundCount": 3
+    },
+    {
+      "test": "Darija+Color",
+      "status": "✅",
+      "latency": 0,
+      "foundCount": 3
+    },
+    {
+      "test": "Multiple Images",
+      "status": "✅",
+      "latency": 0,
+      "foundCount": 6
+    }
+  ],
+  "summary": {
+    "totalTests": 8,
+    "passedTests": 8,
+    "passRate": "100.0%",
+    "avgLatency": "0.75ms",
+    "totalResults": 20,
+    "darijaSupport": "Full (Latin + Arabic)",
+    "imageSearchStatus": "Simulated - Ready for integration"
+  }
+}

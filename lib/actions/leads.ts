@@ -79,7 +79,20 @@ export async function getLeadActions(storeId: number) {
         .order('created_at', { ascending: false })
         .limit(50)
     
-    return { orders: orders || [], bookings: bookings || [] }
+    // Map orders and bookings to convert the fraud check array into a single object
+    const processedOrders = (orders || []).map(o => {
+        const rawFraud = (o as any).fraud;
+        const fraud = Array.isArray(rawFraud) && rawFraud.length > 0 ? rawFraud[0] : null;
+        return { ...o, fraud };
+    });
+
+    const processedBookings = (bookings || []).map(b => {
+        const rawFraud = (b as any).fraud;
+        const fraud = Array.isArray(rawFraud) && rawFraud.length > 0 ? rawFraud[0] : null;
+        return { ...b, fraud };
+    });
+
+    return { orders: processedOrders, bookings: processedBookings }
 }
 
 /**

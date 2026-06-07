@@ -18,6 +18,7 @@ import { useVoiceSearch } from '@/hooks/useVoiceSearch';
 import { useSmartSearch } from '@/hooks/useSmartSearch';
 import { useSavesStore } from '@/lib/store/use-saves-store';
 import { useMessaging } from '@/hooks/useMessaging';
+import { NavbarWriteReviewButton } from '@/components/NavbarWriteReviewButton';
 import { useCartStore } from '@/lib/store/use-cart-store';
 import { useNotifications } from '@/hooks/useNotifications';
 import { toast } from 'sonner';
@@ -1124,9 +1125,7 @@ export default function Navbar() {
 
             {/* Right actions */}
             <div className="flex items-center gap-3 flex-shrink-0">
-              <button className="hidden sm:block text-sm px-4 py-2 text-white bg-[#11111198] hover:bg-[#111111d1] shadow-[0_0_20px_rgba(0,0,0,0.2)] border-none rounded-xl backdrop-blur-sm transition">
-                write a review
-              </button>
+              <NavbarWriteReviewButton />
 
               {user ? (
                 <>

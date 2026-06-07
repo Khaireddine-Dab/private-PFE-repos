@@ -1,6 +1,6 @@
 import { createClient }  from './server'
 export async function query<T>(
-    table: "bookings" | "users" | "items" | "stores" | "orders" | "reviews" | "service_schedules" | "spatial_ref_sys" | "subscriptions" | "products_only" | "services_only" | "services_with_schedules" | "active_stores_with_stats" | "geography_columns" | "geometry_columns",
+    table: "bookings" | "users" | "items" | "stores" | "orders" | "reviews" | "service_schedules" | "spatial_ref_sys" | "subscriptions" | "products_only" | "services_only" | "services_with_schedules" | "active_stores_with_stats" | "geography_columns" | "geometry_columns" | "order_fraud_checks" | "booking_fraud_checks",
     options?:{
         select?:string
         filters?: Record<string , any>

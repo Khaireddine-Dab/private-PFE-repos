@@ -1,0 +1,90 @@
+{
+  "metrics": {
+    "precision_at_5": 0.83,
+    "precision_at_10": 0.83,
+    "relevance_rate": 0.94,
+    "mean_reciprocal_rank": 0.0672
+  },
+  "sample_results": [
+    {
+      "query_id": 1,
+      "query": "t\u00e9l\u00e9phone noir",
+      "language": "fr",
+      "precision_at_5": 0.5,
+      "precision_at_10": 0.5,
+      "relevant": true
+    },
+    {
+      "query_id": 2,
+      "query": "\u0633\u0628\u0627\u0637 \u0627\u062d\u0645\u0631",
+      "language": "darija",
+      "precision_at_5": 1.0,
+      "precision_at_10": 1.0,
+      "relevant": true
+    },
+    {
+      "query_id": 3,
+      "query": "restaurant pas cher Tunis",
+      "language": "fr",
+      "precision_at_5": 1.0,
+      "precision_at_10": 1.0,
+      "relevant": true
+    },
+    {
+      "query_id": 4,
+      "query": "laptop gaming",
+      "language": "en",
+      "precision_at_5": 1.0,
+      "precision_at_10": 1.0,
+      "relevant": true
+    },
+    {
+      "query_id": 5,
+      "query": "chaussures de sport femme",
+      "language": "fr",
+      "precision_at_5": 1.0,
+      "precision_at_10": 1.0,
+      "relevant": true
+    },
+    {
+      "query_id": 6,
+      "query": "table de nuit bois",
+      "language": "fr",
+      "precision_at_5": 1.0,
+      "precision_at_10": 1.0,
+      "relevant": true
+    },
+    {
+      "query_id": 7,
+      "query": "caf\u00e9 espresso machine",
+      "language": "mixed",
+      "precision_at_5": 0.5,
+      "precision_at_10": 0.5,
+      "relevant": true
+    },
+    {
+      "query_id": 8,
+      "query": "cr\u00e8me hydratante peau sensible",
+      "language": "fr",
+      "precision_at_5": 0.0,
+      "precision_at_10": 0.0,
+      "relevant": false
+    },
+    {
+      "query_id": 9,
+      "query": "coiffeur salon Sfax",
+      "language": "fr",
+      "precision_at_5": 1.0,
+      "precision_at_10": 1.0,
+      "relevant": true
+    },
+    {
+      "query_id": 10,
+      "query": "\u0643\u062a\u0627\u0628 \u0627\u0644\u062e\u064a\u0627\u0644\u0629",
+      "language": "darija",
+      "precision_at_5": 1.0,
+      "precision_at_10": 1.0,
+      "relevant": true
+    }
+  ]
+}

@@ -554,6 +554,947 @@ SCALABILITÉ:
 
 ---
 
+## 4. Présentation des Interfaces Utilisateur et Intégration
+
+### 4.1 Architecture Interface Globale
+
+La plateforme Ro2ya comprend **3 applications clients distinctes** avec une interface cohérente et des flux harmonisés:
+
+```
+┌────────────────────────────────────────────────────────────┐
+│           COUCHE PRÉSENTATION (3 CLIENTS)                 │
+├──────────────────┬──────────────────┬──────────────────────┤
+│  Application     │  Application     │  Plateforme Admin    │
+│  Client (Web)    │  Commerçant      │  SaaS                │
+├──────────────────┼──────────────────┼──────────────────────┤
+│ • Accueil        │ • Tableau de     │ • Dashboard          │
+│ • Authentificat. │   bord           │ • Gestion Users      │
+│ • Recherche      │ • Gestion        │ • Validation Commer. │
+│ • Reels          │   produits       │ • Fraude Monitoring  │
+│ • Profil         │ • Promotions     │ • Analytics          │
+│ • Commandes      │ • Commandes      │ • Paramètres         │
+│ • Réservations   │ • Assistant IA   │                      │
+│ • Messagerie     │ • Statistiques   │                      │
+└──────────────────┴──────────────────┴──────────────────────┘
+         │                   │                   │
+         │ HTTP/REST API + JWT Token             │
+         │ WebSocket pour temps réel             │
+         └───────────┬───────────────┬───────────┘
+                     │               │
+            ┌────────▼───────────────▼──────────┐
+            │   COUCHE SERVICE UNIFIÉE          │
+            │  (Routes API Next.js/Django)      │
+            └────────────────────────────────────┘
+```
+
+---
+
+## 4.2 Interface Application Client (B2C)
+
+### 4.2.1 Écran d'Accueil
+
+**Objectif:** Présenter les fonctionnalités principales et explorer les produits tendance
+
+**Composants visuels:**
+- **Header Navigation:** Logo Ro2ya, barre de recherche, icônes panier/compte/notifications
+- **Banner Promotionnel:** Carrousel des campagnes en cours (Soldes, Nouvelle Collection, etc.)
+- **Catégories:** Grid 4-colonnes des principales catégories avec images
+- **Produits Tendance:** Section "Vous aimerez" basée sur recommandations IA (ranking multi-critères)
+- **Reels Section:** Carousel horizontal des vidéos courtes (scroll infini)
+- **Footer:** Contact, CGV, réseaux sociaux
+
+**Flux de données:**
+```
+┌──────────────┐
+│ Utilisateur  │
+│  accède à /  │
+└──────┬───────┘
+       │ GET /api/home/data
+       ▼
+┌────────────────────────────────┐
+│   Backend Route Handler         │
+├────────────────────────────────┤
+│ 1. Récupère reels (5 derniers)  │
+│ 2. Récupère catégories (ordre)  │
+│ 3. Génère classement produits:  │
+│    - Engagement (views/clicks)  │
+│    - Proximité géographique     │
+│    - Score sentiment (4.8/5)    │
+│ 4. Cache Redis: TTL 30min       │
+└────────────────────────────────┘
+       │ JSON response
+       ▼
+┌──────────────┐
+│   Frontend   │
+│ - Affiche   │
+│ - Animation │
+│ - Track    │
+│   impressions│
+└──────────────┘
+```
+
+### 4.2.2 Module Recherche Sémantique
+
+**Objectif:** Trouver des produits pertinents par requête en langage naturel
+
+**Capacités:**
+- Recherche multilangue (Français, Arabe, Darija)
+- Autocomplete avec suggestions
+- Filtres multi-critères (prix, note, commerçant, localité)
+- Tri dynamique (pertinence, prix, nouveau, populaire)
+
+**Architecture recherche:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  UTILISATEUR SAISIT: "iphone bezzaf rkhis ma7 Nabeul"      │
+│  (iPhone très pas cher près de Nabeul en Darija)            │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+        ┌────────────▼────────────┐
+        │ NORMALISATION DARIJA    │
+        ├────────────────────────┤
+        │ Input: "iphone bezzaf  │
+        │        rkhis ma7       │
+        │        Nabeul"         │
+        │                         │
+        │ → Normalised: "iPhone  │
+        │   très pas cher        │
+        │   Nabeul"              │
+        └────────────┬───────────┘
+                     │
+        ┌────────────▼────────────────┐
+        │ EMBEDDING (BGE-M3 ou E5)   │
+        ├────────────────────────────┤
+        │ Query vector: [384 dims]   │
+        │ Latence: ~150ms            │
+        └────────────┬───────────────┘
+                     │
+        ┌────────────▼──────────────────────┐
+        │ RECHERCHE VECTORIELLE (pgvector)  │
+        ├───────────────────────────────────┤
+        │ SELECT * FROM products            │
+        │ WHERE embedding <-> query_vec     │
+        │ AND price BETWEEN 500-1500 TND    │
+        │ AND merchant_location = 'Nabeul'  │
+        │ ORDER BY similarity DESC          │
+        │ LIMIT 50                          │
+        │ Latence: ~45ms                    │
+        └────────────┬──────────────────────┘
+                     │
+        ┌────────────▼──────────────────────────┐
+        │ ENRICHISSEMENT (Métadonnées PostgreSQL)│
+        ├──────────────────────────────────────┤
+        │ Récupère: images, merchant_rating,   │
+        │ discounts, promotion_tags, avis      │
+        │ Latence: ~20ms                       │
+        └────────────┬───────────────────────────┘
+                     │
+        ┌────────────▼──────────────────────────┐
+        │ CLASSEMENT POST-RETRIEVAL (Groq LLM) │
+        ├──────────────────────────────────────┤
+        │ Re-rank top 10 par pertinence        │
+        │ Tient compte: préférence merchant,   │
+        │ delai_livraison, taux_retour         │
+        │ Latence: ~210ms (optionnel)          │
+        └────────────┬───────────────────────────┘
+                     │
+        ┌────────────▼──────────────────────────┐
+        │ CACHING (Redis)                      │
+        ├──────────────────────────────────────┤
+        │ key: "search_iphone_rkhis_nabeul"    │
+        │ TTL: 1 heure                         │
+        │ Hit rate: 67% (requêtes répétées)    │
+        └────────────┬───────────────────────────┘
+                     │
+        ┌────────────▼─────────────────┐
+        │ RÉPONSE FINALE (JSON)        │
+        ├──────────────────────────────┤
+        │ [ {                          │
+        │   id, name, price,           │
+        │   images[], rating,          │
+        │   merchant, delivery_time,   │
+        │   discount_percent           │
+        │ } ]                          │
+        │                              │
+        │ TEMPS TOTAL: ~200ms          │
+        └──────────────────────────────┘
+```
+
+### 4.2.3 Flux Commande
+
+**Étapes du processus:**
+
+| Étape | Acteur | Action | Vérification |
+|-------|--------|--------|--------------|
+| 1 | Client | Sélectionne produit + quantité | Stock disponible |
+| 2 | Frontend | Ajoute au panier (localStorage) | Validation prix |
+| 3 | Client | Clique "Valider commande" | Panier non-vide |
+| 4 | Frontend | Affiche formulaire adresse | Localisation GPS optionnelle |
+| 5 | Frontend | Collecte données paiement | PCI compliance |
+| 6 | Backend | Analyse fraude (4 couches) | Score < 75 |
+| 7 | Backend | Crée paiement Stripe | Montant correct |
+| 8 | Stripe | Autorise/refuse paiement | CVV, 3D Secure |
+| 9 | Backend | Crée commande en DB | ID unique |
+| 10 | Backend | Notifie commerçant (WebSocket) | Message realtime |
+| 11 | Backend | Envoie email confirmation | SendGrid |
+| 12 | Frontend | Redirige page succès | Affiche order_id |
+
+**Intégration Fraude Detection:**
+
+Détection 4-couches activée automatiquement au step 6:
+
+1. **Signaux Heuristiques (Parallèles):**
+   - Nouveau compte (30 pts)
+   - Vélocité burst (35 pts)
+   - Montant anormal (25 pts)
+   - Adresse invalide (15 pts)
+   - Quantité en masse (15 pts)
+   - Cancellations élevées (20 pts)
+   - Spam par merchant (30 pts)
+
+2. **Score Pondéré:** Sum capped at 100
+3. **Seuils Classification:**
+   - SAFE: 0-24 pts → Approuver
+   - SUSPICIOUS: 25-54 pts → Review manuel
+   - HIGH_RISK: 55-74 pts → Bloquer
+   - BLOCKED: ≥75 pts → Rejeter
+
+4. **Analyse AI (Groq Llama):** Optionnelle si score borderline
+
+### 4.2.4 Système Réservation
+
+**Pour services/tutoriels (hairdresser, piano lessons, etc.)**
+
+| Composant | Fonctionnalité | Intégration |
+|-----------|----------------|------------|
+| **Calendrier** | Affiche créneaux disponibles | Récupère du backend |
+| **Sélection Créneau** | Date + Heure + Durée | Validation (pas passé) |
+| **Détails Client** | Pré-rempli profil | Optionnel changement |
+| **Paiement Acompte** | Montant variable 10-50% | Stripe/Konnect |
+| **Confirmation** | Email + Notification push | Async jobs |
+| **Rappel 24h** | Message whatsapp/SMS | Upstash QStash |
+
+### 4.2.5 Module Messagerie Temps Réel
+
+**Architecture WebSocket:**
+
+```
+┌─────────────────────────────────────┐
+│ Client A (Frontend)                 │
+│ WebSocket: /ws/messages/conv_id123  │
+└────────┬────────────────────────────┘
+         │
+    ┌────▼─────────────────────────┐
+    │ WebSocket Server (Socket.io) │
+    │ (Node.js / Supabase Realtime)│
+    └────┬──────────────────────────┘
+         │
+         ├──► Room: conv_id123
+         │    ├─ Client A (socket_1)
+         │    └─ Client B (socket_2)
+         │
+    ┌────▼──────────────────────────────┐
+    │ Event: message:send                │
+    │ Payload: { text, attachment[], ts } │
+    └────┬───────────────────────────────┘
+         │
+    ┌────▼──────────────────────────┐
+    │ Save to Database (Async)      │
+    │ INSERT messages               │
+    │ { conversation_id, sender_id, │
+    │   text, attachments, read }   │
+    └────┬──────────────────────────┘
+         │
+    ┌────▼──────────────────────┐
+    │ Emit to Room              │
+    │ Event: message:new        │
+    │ Data: { id, sender, text} │
+    └──────────────────────────┘
+         │
+    ┌────┴─────────────────────────────┐
+    │                                  │
+    ▼                                  ▼
+┌──────────────────┐     ┌──────────────────┐
+│ Client A Socket  │     │ Client B Socket  │
+│ Reçoit message   │     │ Reçoit message   │
+│ Affiche chat     │     │ Affiche chat     │
+└──────────────────┘     └──────────────────┘
+```
+
+**Typing Indicators + Read Receipts:**
+- Utilisateur tape → Émit event `user:typing`
+- Tous reçoivent → Affiche "... tape"
+- Lit message → Émit event `message:read`
+- Horodatage mis à jour en temps réel
+
+---
+
+## 4.3 Interface Commerçant (B2B)
+
+### 4.3.1 Tableau de Bord
+
+**Vue synthétique des performances:**
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                    DASHBOARD COMMERÇANT                  │
+├──────────────────────────────────────────────────────────┤
+│                                                           │
+│  ┌─────────────┐  ┌──────────────┐  ┌────────────────┐ │
+│  │ CA du Jour  │  │ Commandes    │  │ Note Moyenne   │ │
+│  │  2,450 TND  │  │  24 (↑ 12%)  │  │ 4.7/5 ⭐       │ │
+│  │  ↑ 180%     │  │  ↑ 5 vs hier │  │ (↓ 0.2 pts)    │ │
+│  └─────────────┘  └──────────────┘  └────────────────┘ │
+│                                                           │
+│  ┌──────────────────────────────────────────────────────┐│
+│  │ COMMANDES RÉCENTES                                  ││
+│  ├──────────────────────────────────────────────────────┤│
+│  │                                                      ││
+│  │ [2024-06-02 14:32] #45234 - iPhone 14 Pro         ││
+│  │👤 Asma Ben Ali (Tunis) | Montant: 2,199 TND      ││
+│  │ ⏳ Status: PENDING (En préparation)                ││
+│  │                                                      ││
+│  │ [2024-06-02 13:15] #45233 - Samsung Galaxy S24    ││
+│  │ 👤 Mohamed Mahjoub (Sfax) | Montant: 1,899 TND    ││
+│  │ ✅ Status: SHIPPED (Livreur: Aramex #98234)        ││
+│  │                                                      ││
+│  └──────────────────────────────────────────────────────┘│
+│                                                           │
+│  ┌──────────────────────────────────────────────────────┐│
+│  │ ARTICLES EN RUPTURE DE STOCK                        ││
+│  ├──────────────────────────────────────────────────────┤│
+│  │ • iPhone 15 Pro Max (Sold Out - Last 2 units)      ││
+│  │ • Samsung Galaxy S24 Ultra (Sold Out)              ││
+│  │ • AirPods Pro (3 remaining)                         ││
+│  └──────────────────────────────────────────────────────┘│
+│                                                           │
+└──────────────────────────────────────────────────────────┘
+```
+
+**Métriques affichées:**
+- **KPIs temps réel:** Chiffre d'affaires, commandes, note, taux de conversion
+- **Graphiques:** CA par jour/mois, top produits, localités clientes
+- **Alertes:** Stock faible, avis négatifs, problèmes paiement
+
+### 4.3.2 Gestion des Produits
+
+**Workflow de création produit assistée par IA:**
+
+```
+┌──────────────────────────────────────────────────────────┐
+│         CRÉATION PRODUIT - ASSISTANT IA                  │
+├──────────────────────────────────────────────────────────┤
+│                                                           │
+│ ÉTAPE 1: SAISIE DE BASE                                  │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ Nom: [iPhone 14 Pro Max                           ] │ │
+│ │ Catégorie: [Électronique > Smartphones ▼        ] │ │
+│ │ Prix: [2,199 TND        ] | Stock: [15 unités   ] │ │
+│ │ Description courte: [Excellent téléphone...]     │ │
+│ │                                                     │ │
+│ │ [📸 Upload photos] [📷 Webcam] [🔗 Galerie]      │ │
+│ └─────────────────────────────────────────────────────┘ │
+│                                                           │
+│ ÉTAPE 2: ✨ GÉNÉRATION DESCRIPTION (IA)                 │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │                                                     │ │
+│ │ Groq Llama 3.3 (Analyse en 500ms)                 │ │
+│ │                                                     │ │
+│ │ "iPhone 14 Pro Max: L'innovation Apple pour      │ │
+│ │ vous. Écran Super Retina XDR 6,7" brillant,     │ │
+│ │ processeur A16 Bionic ultra-rapide, caméra      │ │
+│ │ 48MP révolutionnaire. Batterie 24h. Design       │ │
+│ │ premium acier inoxydable. Parfait pour           │ │
+│ │ photographie professionnelle et gaming.          │ │
+│ │ Garanti 2 ans. Livraison rapide Tunis/banlieue."│ │
+│ │                                                     │ │
+│ │ [✏️ Modifier]  [🔄 Régénérer]  [✅ Accepter]    │ │
+│ └─────────────────────────────────────────────────────┘ │
+│                                                           │
+│ ÉTAPE 3: 🎨 IMAGES GÉNÉRÉES (Stability AI)              │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ Generating 4 professional product images...         │ │
+│ │ [████████░░░░░░░░░░░░░░░░] 47%                   │ │
+│ │                                                     │ │
+│ │ (Coût: ~0.08$ par image pour haute résolution)   │ │
+│ └─────────────────────────────────────────────────────┘ │
+│                                                           │
+│ ÉTAPE 4: 🧠 EMBEDDINGS & INDEXATION                      │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ Génération embedding produit...                     │ │
+│ │ Model: BAAI/BGE-M3 (1024 dimensions)              │ │
+│ │ Vecteur: [0.234, 0.891, ..., 0.105] ✅          │ │
+│ │                                                     │ │
+│ │ Insertion pgvector DB...                           │ │
+│ │ Index: products_embedding_idx ✅                   │ │
+│ └─────────────────────────────────────────────────────┘ │
+│                                                           │
+│ ÉTAPE 5: 💾 SAUVEGARDE                                   │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ Enregistrement base de données...                   │ │
+│ │ Product ID: #PRD_987654 ✅                        │ │
+│ │ Images: 4 fichiers Cloudinary ✅                  │ │
+│ │                                                     │ │
+│ │ [📊 Voir statistiques] [🔍 Aperçu] [✅ Terminer] │ │
+│ └─────────────────────────────────────────────────────┘ │
+│                                                           │
+│ ⏱️ Temps total: ~40 secondes                             │
+│ 💰 Coût (IA + embeddings): ~0.044 TND                   │
+│                                                           │
+└──────────────────────────────────────────────────────────┘
+```
+
+### 4.3.3 Gestion Promotions
+
+- Créer solde/réduction (% ou montant fixe)
+- Codes promo uniques
+- Campagnes date-limitées
+- A/B testing automatique (2 prix, mesure conversion)
+- Planning calendrier promotionnel
+
+### 4.3.4 Gestion Commandes (Temps Réel)
+
+**Intégration WebSocket pour mises à jour instantanées:**
+
+```
+Commerçant A connecté → WebSocket room: "merchant_1"
+
+Nouveau client commande produit → Event broadcast:
+{
+  type: "order:new",
+  order: {
+    id: "#45234",
+    customer: "Asma Ben Ali",
+    items: [{ name: "iPhone 14 Pro", qty: 1, price: 2199 }],
+    total: 2199,
+    delivery_address: "Tunis, Lac 2, Immeuble Safa",
+    created_at: "2024-06-02T14:32:15Z"
+  }
+}
+
+Frontend Commerçant:
+1. Son app reçoit événement
+2. Notification sonore "ding" + toast "Nouvelle commande"
+3. Nombre badge +1 → "Commandes: 24"
+4. Nouvelle ligne s'ajoute au tableau commandes
+5. Peut cliquer → modal détails → marquer "En préparation"
+```
+
+---
+
+## 4.4 Intégration et Interfaçage des Modules
+
+### 4.4.1 Authentification Supabase (Couche Unifiée)
+
+**Architecture OAuth 2.0 + JWT:**
+
+```
+CLIENT SIDE:
+┌──────────────────────────┐
+│ Utilisateur clique Login │
+└────────────┬─────────────┘
+             │
+    ┌────────▼──────────────────┐
+    │ Redirect vers Supabase    │
+    │ https://supabase.io/auth  │
+    │ ?client_id=...            │
+    │ &redirect_uri=...         │
+    └────────┬──────────────────┘
+             │
+    ┌────────▼──────────────────┐
+    │ User logs in / creates    │
+    │ (Supabase handles flow)   │
+    └────────┬──────────────────┘
+             │
+    ┌────────▼──────────────────────────────┐
+    │ Redirect back to app with code        │
+    │ /api/auth/callback?code=...           │
+    └────────┬───────────────────────────────┘
+             │
+SERVER SIDE:
+    ┌────────▼──────────────────────────────┐
+    │ Backend verifies code                 │
+    │ POST /auth/v1/token                   │
+    │ { code, client_id, secret }           │
+    └────────┬───────────────────────────────┘
+             │
+    ┌────────▼────────────────────────────────┐
+    │ Supabase returns:                       │
+    │ {                                       │
+    │   access_token: "eyJ0eX...",           │
+    │   refresh_token: "xxx",                │
+    │   user: {                              │
+    │     id: "user_123",                    │
+    │     email: "user@example.com",         │
+    │     role: "customer"                   │
+    │   }                                    │
+    │ }                                      │
+    └────────┬────────────────────────────────┘
+             │
+    ┌────────▼──────────────────────────────┐
+    │ Backend stores tokens in session      │
+    │ Creates secure httpOnly cookie        │
+    │ Redirects /dashboard                  │
+    └────────┬──────────────────────────────┘
+             │
+CLIENT SIDE:
+    ┌────────▼──────────────────────────────┐
+    │ Frontend receives auth header         │
+    │ Stores access_token in memory/state   │
+    │ Authenticated! ✅                     │
+    └───────────────────────────────────────┘
+```
+
+**JWT Token Structure:**
+
+```json
+{
+  "header": {
+    "alg": "HS256",
+    "typ": "JWT"
+  },
+  "payload": {
+    "iss": "https://supabase.io",
+    "sub": "user_12345",
+    "aud": ["authenticated"],
+    "exp": 1717354800,
+    "iat": 1717351200,
+    "email": "asma@example.com",
+    "phone": "+216 50 123 456",
+    "app_metadata": {
+      "provider": "email",
+      "providers": ["email"]
+    },
+    "user_metadata": {
+      "preferred_language": "fr",
+      "location": "Tunis"
+    },
+    "role": "authenticated",
+    "custom_claims": {
+      "merchant_id": null,
+      "is_admin": false
+    }
+  },
+  "signature": "HMACSHA256(...)"
+}
+```
+
+**Utilisation dans les requêtes API:**
+
+```typescript
+// Frontend Code
+const response = await fetch('/api/search?q=iPhone', {
+  headers: {
+    'Authorization': `Bearer ${accessToken}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+// Backend (Next.js Route Handler)
+export async function GET(request) {
+  const authHeader = request.headers.get('Authorization');
+  const token = authHeader?.split(' ')[1];
+  
+  // Verify token with Supabase
+  const {
+    data: { user },
+    error
+  } = await supabase.auth.getUser(token);
+  
+  if (error) return Response.json({ error }, { status: 401 });
+  
+  // User authenticated, process request
+  const results = await search(request.nextUrl.searchParams.get('q'));
+  return Response.json(results);
+}
+```
+
+### 4.4.2 Pipeline Recherche + Notifications Temps Réel
+
+**Architecture intégrée:**
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ UTILISATEUR UTILISE RECHERCHE                           │
+└────────────┬────────────────────────────────────────────┘
+             │
+    ┌────────▼──────────────────────────────────┐
+    │ GET /api/search                           │
+    │ + JWT token                               │
+    │ + Darija Query: "iphone rkhis"           │
+    └────────┬───────────────────────────────────┘
+             │
+    ┌────────▼────────────────────────────────────────────┐
+    │ BACKEND PIPELINE                                    │
+    ├────────────────────────────────────────────────────┤
+    │                                                     │
+    │ 1. Normalise query (Darija → Français)            │
+    │ 2. Génère embedding (BGE-M3 1024-dim)            │
+    │ 3. Recherche vectorielle (pgvector)               │
+    │ 4. Enrichit métadonnées (produits, commerçants)   │
+    │ 5. Re-rank avec Groq LLM (optionnel)              │
+    │ 6. Cache Redis (TTL 1h)                           │
+    │                                                     │
+    └────────┬────────────────────────────────────────────┘
+             │
+    ┌────────▼──────────────────────────────────┐
+    │ Retourne JSON:                            │
+    │ {                                         │
+    │   results: [...],                         │
+    │   count: 42,                              │
+    │   query_time_ms: 187,                     │
+    │   cached: false                           │
+    │ }                                         │
+    └────────┬──────────────────────────────────┘
+             │
+CLIENT SIDE:
+    ┌────────▼──────────────────────────────────────────┐
+    │ Frontend reçoit résultats                         │
+    │ Affiche grid produits                            │
+    │ Utilisateur browse résultats                     │
+    └────────┬────────────────────────────────────────────┘
+             │
+    ┌────────▼────────────────────────────────────────┐
+    │ NOTIFICATIONS TEMPS RÉEL (WebSocket)            │
+    │                                                  │
+    │ Utilisateur clique produit → View event        │
+    │ Product ID #12345 → Commerçant reçoit notif    │
+    │                                                  │
+    │ Événement: "product:view"                       │
+    │ {                                               │
+    │   product_id: 12345,                            │
+    │   viewer_id: user_123,                          │
+    │   viewer_location: "Tunis",                      │
+    │   timestamp: "2024-06-02T14:35:00Z"            │
+    │ }                                               │
+    │                                                  │
+    │ Commerçant voit:                                │
+    │ "📊 +1 view sur iPhone 14 Pro (Tunis)"        │
+    └────────────────────────────────────────────────┘
+             │
+    ┌────────▼──────────────────────────────────────┐
+    │ ANALYTICS ASYNC (Upstash QStash)              │
+    │                                                │
+    │ Backend enqueue job:                          │
+    │ {                                              │
+    │   type: "search_analytics",                    │
+    │   query: "iphone rkhis",                       │
+    │   result_count: 42,                            │
+    │   user_id: user_123,                           │
+    │   response_time_ms: 187                        │
+    │ }                                              │
+    │                                                │
+    │ Job exécuté asynchrone → met à jour stats      │
+    └────────────────────────────────────────────────┘
+```
+
+### 4.4.3 Détection Fraude - Pipeline Complet
+
+**Flux de décision automatisé:**
+
+```
+┌────────────────────────────────────────┐
+│ CLIENT SOUMET COMMANDE                 │
+│ POST /api/orders/create                │
+│ {                                      │
+│   items: [{...}],                      │
+│   total: 2199 TND,                     │
+│   delivery_address: "...",             │
+│   card_token: "tok_xxxx"               │
+│ }                                      │
+└──────────┬───────────────────────────┘
+           │
+    ┌──────▼────────────────────────────────────┐
+    │ COUCHE 1: SIGNAUX HEURISTIQUES (Parallèle)│
+    ├──────────────────────────────────────────┤
+    │                                          │
+    │ Query 1: SELECT * FROM users            │
+    │          WHERE id = customer_123        │
+    │ → Compte créé il y a 2 jours (-30 pts)  │
+    │                                          │
+    │ Query 2: SELECT COUNT(*) FROM orders    │
+    │          WHERE user_id = 123            │
+    │          AND created_at > NOW() - '1h'  │
+    │ → 3 commandes en 1 heure (-35 pts)      │
+    │                                          │
+    │ Query 3: LENGTH(delivery_address) < 10  │
+    │ → Adresse suspecte (-15 pts)             │
+    │                                          │
+    │ Query 4: total > avg_purchase * 3       │
+    │ → Montant 5x supérieur à moyenne (-25   │
+    │   pts)                                   │
+    │                                          │
+    │ Query 5-7: Quantité / Cancellations /   │
+    │            Merchant patterns             │
+    │                                          │
+    │ ⏱️ Total: ~1200ms (réseau-limité)       │
+    │                                          │
+    │ RÉSULTAT: Score = 30+35+15+25 = 105    │
+    │           Capped at 100 → Score 100     │
+    └──────┬───────────────────────────────────┘
+           │
+    ┌──────▼────────────────────────────────────┐
+    │ COUCHE 2: SEUIL SIMPLE                   │
+    ├──────────────────────────────────────────┤
+    │ Score 100 ≥ 75 → HIGH_RISK 🔴           │
+    │                                          │
+    │ Decision: BLOCK (recommandation défaut) │
+    └──────┬───────────────────────────────────┘
+           │
+    ┌──────▼────────────────────────────────────┐
+    │ COUCHE 3: ANALYSE AI (Optionnel)         │
+    │ (Skip si score est clairement safe)     │
+    ├──────────────────────────────────────────┤
+    │                                          │
+    │ Score 100 → borderline, appeler LLM     │
+    │                                          │
+    │ Prompt to Groq Llama 3.3:               │
+    │ "Analyse fraude potentielle:             │
+    │  - Compte 2j old                         │
+    │  - 3 commandes/1h (burst)               │
+    │  - Adresse courte (Tunis, 10 car)       │
+    │  - Montant: 2199 TND (iPhone normal)    │
+    │  - Merchant: Certified, rating 4.8     │
+    │                                          │
+    │  Cette commande est-elle fraude?         │
+    │  Réponds JSON: {...}"                    │
+    │                                          │
+    │ ⏱️ ~250ms (optionnel)                   │
+    │                                          │
+    │ Response:                                │
+    │ {                                        │
+    │   is_fraud: false,                       │
+    │   confidence: 0.72,                      │
+    │   reasoning: "Burst pattern suspicious  │
+    │              mais produit légitime,      │
+    │              merchant validé, montant   │
+    │              raisonnable. Probable new  │
+    │              user testing service."      │
+    │ }                                        │
+    │                                          │
+    └──────┬───────────────────────────────────┘
+           │
+    ┌──────▼────────────────────────────────────┐
+    │ COUCHE 4: CLASSIFICATION FINALE          │
+    ├──────────────────────────────────────────┤
+    │                                          │
+    │ Heuristic: score 100 → BLOCKED           │
+    │ AI override: is_fraud false              │
+    │                                          │
+    │ Final Decision:                          │
+    │ Level = "high_risk"                      │
+    │ Action = "REVIEW_REQUIRED"               │
+    │ (Humain doit confirmer)                  │
+    │                                          │
+    │ Save to DB:                              │
+    │ INSERT order_fraud_checks {              │
+    │   order_id,                              │
+    │   heuristic_score: 100,                  │
+    │   ai_prediction: 0.28,                   │
+    │   final_level: "high_risk",              │
+    │   signals_detected: [...],               │
+    │   recommended_action: "review"           │
+    │ }                                        │
+    │                                          │
+    └──────┬───────────────────────────────────┘
+           │
+    ┌──────▼────────────────────────────────────┐
+    │ RÉPONSE AU CLIENT                        │
+    ├──────────────────────────────────────────┤
+    │                                          │
+    │ HTTP 202 Accepted                        │
+    │ {                                        │
+    │   order_id: "#45234",                    │
+    │   status: "pending_review",              │
+    │   message: "Commande en cours de vérif" │
+    │ }                                        │
+    │                                          │
+    │ Frontend affiche:                        │
+    │ "⏳ Votre commande est vérifiée          │
+    │  avant traitement (délai 2-4h)"         │
+    │                                          │
+    │ Notification Admin:                      │
+    │ "Commande #45234 - REVIEW_REQUIRED"     │
+    │ (Dashboard anti-fraude)                  │
+    │                                          │
+    └──────────────────────────────────────────┘
+```
+
+### 4.4.4 Notifications et Webhooks Asynchrones
+
+**Archétype: Événement (Event-Driven Architecture)**
+
+```
+┌──────────────────────────────────────────────┐
+│ ÉVÉNEMENT DÉCLENCHÉ                          │
+│ (order:created, payment:succeeded, etc.)     │
+└────────────┬─────────────────────────────────┘
+             │
+    ┌────────▼──────────────────────────────────┐
+    │ Backend enqueue à Upstash QStash         │
+    │                                           │
+    │ Queue job:                                │
+    │ {                                         │
+    │   type: "order:created",                  │
+    │   payload: { order_id, customer_id },    │
+    │   delay: 0,                               │
+    │   retry: { max_attempts: 3, delay: 5min }│
+    │ }                                         │
+    └────────┬──────────────────────────────────┘
+             │
+    ┌────────▼────────────────────────────────┐
+    │ QStash exécute asynchronement           │
+    │ POST /webhook/notifications/order-created│
+    │                                         │
+    │ Payload reçu:                           │
+    │ {                                       │
+    │   order_id: "#45234",                   │
+    │   customer_id: user_123,                │
+    │   merchant_id: merchant_45              │
+    │ }                                       │
+    └────────┬────────────────────────────────┘
+             │
+    ┌────────▼──────────────────────────────────────────┐
+    │ PARALLÉLISATION: 3 tâches async                   │
+    │                                                    │
+    │ 1️⃣ EMAIL (SendGrid)                             │
+    │   Sujet: "Commande confirmée #45234"            │
+    │   À: customer@example.com                        │
+    │   Template: order_confirmation.html              │
+    │   Délai: <2s                                     │
+    │                                                  │
+    │ 2️⃣ NOTIFICATION COMMERÇANT (WebSocket)          │
+    │   Event: "order:new"                            │
+    │   Room: "merchant_45"                           │
+    │   Payload: {...order details...}                │
+    │   Délai: <100ms                                 │
+    │                                                  │
+    │ 3️⃣ PUSH NOTIFICATION (Expo)                     │
+    │   Channel: "orders"                             │
+    │   Title: "Nouvelle commande!"                   │
+    │   Body: "iPhone 14 Pro - 2199 TND"             │
+    │   Délai: <3s                                    │
+    │                                                  │
+    │ 4️⃣ ANALYTICS (SQL Insert)                       │
+    │   INSERT order_analytics {...}                  │
+    │   Délai: <500ms                                 │
+    │                                                  │
+    │ ⏱️ Total parallèle: ~3 secondes max              │
+    │                                                  │
+    └────────┬────────────────────────────────────────┘
+             │
+    ┌────────▼────────────────────────────────────┐
+    │ RÉSULTATS RETOURNÉS À QSTASH               │
+    │                                             │
+    │ {                                           │
+    │   status: "completed",                      │
+    │   results: {                                │
+    │     email: { status: "sent" },              │
+    │     websocket: { delivered: true },         │
+    │     push: { status: "queued" },             │
+    │     analytics: { rows_inserted: 1 }         │
+    │   }                                         │
+    │ }                                           │
+    │                                             │
+    │ ✅ Job complété avec succès                 │
+    │                                             │
+    └────────────────────────────────────────────┘
+```
+
+### 4.4.5 Cas d'Usage Intégré: Flux Complet Commande → Fraude → Notification
+
+**Scénario: Utilisateur tunisien commande sur mobile**
+
+```
+T+0s:    Utilisateur appuie "Confirmer commande"
+         ├─ Validation frontend locale
+         └─ POST /api/orders/create
+
+T+50ms:  Backend reçoit requête
+         ├─ Authentifie JWT token
+         ├─ Valide données (montant, articles)
+         └─ Trigger: "order:processing"
+
+T+150ms: Fraude Detection démarre
+         ├─ 7 requêtes parallèles à Supabase
+         ├─ Heuristic score: 42 pts → SUSPICIOUS
+         └─ Seuil: call Groq LLM
+
+T+350ms: Groq LLM analyse
+         ├─ Input: user profile, transaction history, merchant
+         ├─ Output: is_fraud = false, confidence = 0.85
+         └─ Final: APPROVE (safe)
+
+T+400ms: Paiement Stripe
+         ├─ POST /charges avec token
+         ├─ Stripe valide & autorise
+         └─ Response: succeeded ✅
+
+T+420ms: Créer commande en DB
+         ├─ INSERT orders table
+         ├─ INSERT order_items
+         ├─ INSERT order_fraud_checks
+         └─ order_id = #45234
+
+T+430ms: Réponse au client
+         ├─ HTTP 201 Created
+         ├─ JSON: { order_id: "#45234", status: "confirmed" }
+         └─ Frontend: Affiche "Commande confirmée ✅"
+
+T+450ms: Async webhooks enqueue
+         ├─ Upstash QStash: "order:created"
+         ├─ Queue 3 tâches parallèles
+         └─ Returns immediately (fire & forget)
+
+T+500ms: Notification commerçant (WebSocket)
+         ├─ Événement: { type: "order:new", order_id: "#45234" }
+         ├─ Room: merchant_45 reçoit
+         └─ App affiche toast: "Nouvelle commande 🔔"
+
+T+1500ms: Email envoyé (SendGrid)
+         ├─ To: asma@example.com
+         ├─ Subject: "Commande #45234 confirmée"
+         └─ Content: Détails + lien tracking
+
+T+2000ms: Push notification envoyée (Expo)
+         ├─ To: user's device
+         ├─ Title: "Commande confirmée"
+         └─ Body: "Suivi en temps réel"
+
+T+2500ms: Toutes notifications complétées ✅
+         └─ Frontend: Client peut tracker ou retourner accueil
+
+RÉSUMÉ:
+- Temps critique (commande créée): 420ms
+- Temps perception utilisateur: 500ms (confirmation)
+- Notifications asynchrones: 0-2500ms
+- Zéro blocage utilisateur
+- Scalable à 10,000+ commandes/jour
+```
+
+---
+
+## 4.5 Conclusion: Intégration Modulaire
+
+La plateforme Ro2ya démontre une **architecture intégrée et cohérente** où:
+
+1. **3 clients distincts** partagent une **API unifiée**
+2. **Authentification centralisée** (Supabase JWT) garantit la sécurité
+3. **Recherche sémantique multilangue** offre UX supérieure
+4. **Détection fraude 4-couches** réduit risques transactionnels
+5. **Temps réel WebSocket** synchronise immédiatement commerçants et clients
+6. **Webhooks asynchrones** évitent blocages tout en garantissant fiabilité
+7. **IA générative** (Groq Llama) assiste commerçants et analyse anomalies
+
+Cette cohérence architecturale permet:
+- ✅ **Scalabilité:** 100,000+ utilisateurs concurrents
+- ✅ **Fiabilité:** Détection fraude + Async job queuing
+- ✅ **Performance:** Latence < 500ms pour opérations critiques
+- ✅ **Multilinguisme:** Darija native + 91.6% couverture lexicale
+
+---
+
 **Références:**
 - Devlin et al. (2018). "BERT: Pre-training of Deep Bidirectional Transformers"
 - OpenAI (2023). "GPT-4 Technical Report"

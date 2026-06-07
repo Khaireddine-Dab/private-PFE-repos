@@ -1,0 +1,68 @@
+{
+  "timestamp": "2026-06-01T17:24:37.872Z",
+  "version": "v2-improved",
+  "results": [
+    {
+      "name": "Fraud Detection (v2)",
+      "totalTests": 10,
+      "passed": 10,
+      "threshold": 40,
+      "truePositives": 6,
+      "falsePositives": 0,
+      "trueNegatives": 4,
+      "falseNegatives": 0,
+      "precision": "100.00",
+      "recall": "100.00",
+      "f1Score": "100.00",
+      "specificity": "100.00",
+      "accuracy": "100.00",
+      "avgLatencyMs": "20.50"
+    },
+    {
+      "name": "Search (with Redis)",
+      "queriesTested": 8,
+      "avgLatencyMsWithoutCache": "78.31",
+      "avgLatencyMsWithCache": "78.31",
+      "improvementPercent": "0.0",
+      "p50LatencyMs": "83.24",
+      "p95LatencyMs": "110.91",
+      "p99LatencyMs": "110.91",
+      "cacheHitRate": "50.00"
+    },
+    {
+      "name": "Ranking",
+      "operationsTested": 5,
+      "avgLatencyMs": "31.16",
+      "p50LatencyMs": "29.14",
+      "p95LatencyMs": "42.36",
+      "p99LatencyMs": "42.36",
+      "minLatencyMs": "18.32",
+      "maxLatencyMs": "42.36"
+    }
+  ],
+  "alerts": [
+    {
+      "severity": "HIGH",
+      "metric": "Fraud F1-Score",
+      "value": "100.00",
+      "threshold": 75,
+      "unit": "%",
+      "timestamp": "2026-06-01T17:24:37.755Z"
+    },
+    {
+      "severity": "HIGH",
+      "metric": "Fraud Recall",
+      "value": "100.00",
+      "threshold": 75,
+      "unit": "%",
+      "timestamp": "2026-06-01T17:24:37.756Z"
+    }
+  ],
+  "cacheStats": {
+    "hits": 8,
+    "misses": 8,
+    "hitRate": "50.00",
+    "size": 8,
+    "avgLatency": "1.00"
+  }
+}

@@ -17,6 +17,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "types": ["node"],
     "plugins": [
       {
         "name": "next"
@@ -30,6 +31,7 @@
   },
   "include": [
     "next-env.d.ts",
+    "EXAMPLES_*.ts",
     "app/**/*.ts",
     "app/**/*.tsx",
     "components/**/*.ts",
@@ -42,6 +44,7 @@
     "store/**/*.tsx",
     "types/**/*.ts",
     "types/**/*.tsx",
+    "tests/**/*.ts",
     "middleware.ts",
     ".next/types/**/*.ts"
   ],

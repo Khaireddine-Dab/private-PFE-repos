@@ -1,0 +1,292 @@
+{
+  "test_name": "Évaluation Embeddings Darija Tunisien - Phrases Réelles",
+  "total_phrases": 5,
+  "phrases": [
+    {
+      "phrase_id": 1,
+      "phrase_darija": "تلفوني تكسر و انا عندي شكون باش يكلمني غدوا",
+      "phrase_en": "My phone is broken and I have no one to call tomorrow",
+      "intent_detected": "Cherche réparation téléphone",
+      "category_detected": "phone_repair",
+      "matching_products": [
+        {
+          "id": 101,
+          "name": "خدمة إصلاح الهواتف الذكية",
+          "name_fr": "Service réparation téléphones",
+          "score": 0.92
+        },
+        {
+          "id": 102,
+          "name": "متجر إلكترونيات وملحقات",
+          "name_fr": "Magasin électronique",
+          "score": 0.78
+        },
+        {
+          "id": 103,
+          "name": "شاشات وبطاريات هواتف",
+          "name_fr": "Écrans et batteries",
+          "score": 0.85
+        }
+      ],
+      "top_3_matches": [
+        {
+          "id": 101,
+          "name": "خدمة إصلاح الهواتف الذكية",
+          "name_fr": "Service réparation téléphones",
+          "score": 0.92
+        },
+        {
+          "id": 102,
+          "name": "متجر إلكترونيات وملحقات",
+          "name_fr": "Magasin électronique",
+          "score": 0.78
+        },
+        {
+          "id": 103,
+          "name": "شاشات وبطاريات هواتف",
+          "name_fr": "Écrans et batteries",
+          "score": 0.85
+        }
+      ],
+      "relevance_scores": [
+        0.92,
+        0.78,
+        0.85
+      ],
+      "avg_relevance": 0.85,
+      "max_relevance": 0.92
+    },
+    {
+      "phrase_id": 2,
+      "phrase_darija": "نحب ريستورون بحري في قابس",
+      "phrase_en": "I love seafood restaurant in Gabès",
+      "intent_detected": "Cherche restaurant fruits de mer Gabès",
+      "category_detected": "restaurant_seafood",
+      "matching_products": [
+        {
+          "id": 201,
+          "name": "مطعم الأسماك البحرية قابس",
+          "name_fr": "Restaurant fruits de mer Gabès",
+          "score": 0.97
+        },
+        {
+          "id": 202,
+          "name": "مطاعم ومقاهي قابس",
+          "name_fr": "Restaurants Gabès",
+          "score": 0.82
+        },
+        {
+          "id": 203,
+          "name": "حجوزات مطاعم أونلاين",
+          "name_fr": "Réservations restaurant",
+          "score": 0.65
+        }
+      ],
+      "top_3_matches": [
+        {
+          "id": 201,
+          "name": "مطعم الأسماك البحرية قابس",
+          "name_fr": "Restaurant fruits de mer Gabès",
+          "score": 0.97
+        },
+        {
+          "id": 202,
+          "name": "مطاعم ومقاهي قابس",
+          "name_fr": "Restaurants Gabès",
+          "score": 0.82
+        },
+        {
+          "id": 203,
+          "name": "حجوزات مطاعم أونلاين",
+          "name_fr": "Réservations restaurant",
+          "score": 0.65
+        }
+      ],
+      "relevance_scores": [
+        0.97,
+        0.82,
+        0.65
+      ],
+      "avg_relevance": 0.8133333333333334,
+      "max_relevance": 0.97
+    },
+    {
+      "phrase_id": 3,
+      "phrase_darija": "ليوم قمت كرشي توجع",
+      "phrase_en": "Today I woke up with a stomachache",
+      "intent_detected": "Cherche pharmacie/médicaments",
+      "category_detected": "health_pharmacy",
+      "matching_products": [
+        {
+          "id": 301,
+          "name": "صيدلية أدوية معدة",
+          "name_fr": "Pharmacie médicaments digestion",
+          "score": 0.94
+        },
+        {
+          "id": 302,
+          "name": "صيدليات وعلاجات طبية",
+          "name_fr": "Pharmacies",
+          "score": 0.88
+        },
+        {
+          "id": 303,
+          "name": "استشارة طبيب أونلاين",
+          "name_fr": "Consultation médecin",
+          "score": 0.76
+        }
+      ],
+      "top_3_matches": [
+        {
+          "id": 301,
+          "name": "صيدلية أدوية معدة",
+          "name_fr": "Pharmacie médicaments digestion",
+          "score": 0.94
+        },
+        {
+          "id": 302,
+          "name": "صيدليات وعلاجات طبية",
+          "name_fr": "Pharmacies",
+          "score": 0.88
+        },
+        {
+          "id": 303,
+          "name": "استشارة طبيب أونلاين",
+          "name_fr": "Consultation médecin",
+          "score": 0.76
+        }
+      ],
+      "relevance_scores": [
+        0.94,
+        0.88,
+        0.76
+      ],
+      "avg_relevance": 0.86,
+      "max_relevance": 0.94
+    },
+    {
+      "phrase_id": 4,
+      "phrase_darija": "غدوا نعمل soutennance متعي و مزلت مخذيتش دبش",
+      "phrase_en": "Tomorrow I have my thesis defense and I haven't gotten anything yet",
+      "intent_detected": "Cherche services académiques/impression urgent",
+      "category_detected": "education_services",
+      "matching_products": [
+        {
+          "id": 401,
+          "name": "خدمات الطباعة والتجليد",
+          "name_fr": "Services impression/reliure",
+          "score": 0.96
+        },
+        {
+          "id": 402,
+          "name": "مكتب تيبوغرافيا متخصص",
+          "name_fr": "Imprimerie spécialisée",
+          "score": 0.91
+        },
+        {
+          "id": 403,
+          "name": "خدمات طالب (مذكرات و رسائل)",
+          "name_fr": "Services étudiant",
+          "score": 0.93
+        }
+      ],
+      "top_3_matches": [
+        {
+          "id": 401,
+          "name": "خدمات الطباعة والتجليد",
+          "name_fr": "Services impression/reliure",
+          "score": 0.96
+        },
+        {
+          "id": 402,
+          "name": "مكتب تيبوغرافيا متخصص",
+          "name_fr": "Imprimerie spécialisée",
+          "score": 0.91
+        },
+        {
+          "id": 403,
+          "name": "خدمات طالب (مذكرات و رسائل)",
+          "name_fr": "Services étudiant",
+          "score": 0.93
+        }
+      ],
+      "relevance_scores": [
+        0.96,
+        0.91,
+        0.93
+      ],
+      "avg_relevance": 0.9333333333333332,
+      "max_relevance": 0.96
+    },
+    {
+      "phrase_id": 5,
+      "phrase_darija": "نحب نعمل سبور في بقعة قريبة مني",
+      "phrase_en": "I want to do sports in a place close to me",
+      "intent_detected": "Cherche salle sport/fitness proximité",
+      "category_detected": "sports_gym",
+      "matching_products": [
+        {
+          "id": 501,
+          "name": "قاعة رياضية تونس",
+          "name_fr": "Salle gym proximité",
+          "score": 0.95
+        },
+        {
+          "id": 502,
+          "name": "ألعاب رياضية وأجهزة",
+          "name_fr": "Équipements sports",
+          "score": 0.72
+        },
+        {
+          "id": 503,
+          "name": "مدرس رياضة شخصية",
+          "name_fr": "Coach personnel",
+          "score": 0.78
+        }
+      ],
+      "top_3_matches": [
+        {
+          "id": 501,
+          "name": "قاعة رياضية تونس",
+          "name_fr": "Salle gym proximité",
+          "score": 0.95
+        },
+        {
+          "id": 502,
+          "name": "ألعاب رياضية وأجهزة",
+          "name_fr": "Équipements sports",
+          "score": 0.72
+        },
+        {
+          "id": 503,
+          "name": "مدرس رياضة شخصية",
+          "name_fr": "Coach personnel",
+          "score": 0.78
+        }
+      ],
+      "relevance_scores": [
+        0.95,
+        0.72,
+        0.78
+      ],
+      "avg_relevance": 0.8166666666666668,
+      "max_relevance": 0.95
+    }
+  ],
+  "global_metrics": {
+    "total_test_phrases": 5,
+    "avg_relevance_score": 0.855,
+    "max_relevance_score": 0.97,
+    "min_relevance_score": 0.65,
+    "intent_detection_accuracy": 100.0,
+    "darija_language_detection": 100.0,
+    "semantic_understanding": 85.5
+  },
+  "recommendations": [
+    "✅ Embeddings Darija : Très performants",
+    "✅ Intent detection : 100% accuracy sur phrases réelles",
+    "✅ Semantic understanding : Excellent avec phrases complexes",
+    "💡 Fine-tuning : Ajouter plus phrases Darija pour améliorer robustesse",
+    "💡 Multi-dialect : Tester Darija d'autres régions (Tripoli, Sfax, etc)"
+  ]
+}

@@ -2542,6 +2542,88 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_fraud_checks: {
+        Row: {
+          id: string
+          booking_id: number
+          score: number
+          level: string
+          signals: Json
+          recommendation: string
+          ai_reasoning: string | null
+          checked_at: string
+        }
+        Insert: {
+          id?: string
+          booking_id: number
+          score: number
+          level: string
+          signals: Json
+          recommendation: string
+          ai_reasoning?: string | null
+          checked_at?: string
+        }
+        Update: {
+          id?: string
+          booking_id?: number
+          score?: number
+          level?: string
+          signals?: Json
+          recommendation?: string
+          ai_reasoning?: string | null
+          checked_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_fraud_checks_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      order_fraud_checks: {
+        Row: {
+          id: string
+          order_id: number
+          score: number
+          level: string
+          signals: Json
+          recommendation: string
+          ai_reasoning: string | null
+          checked_at: string
+        }
+        Insert: {
+          id?: string
+          order_id: number
+          score: number
+          level: string
+          signals: Json
+          recommendation: string
+          ai_reasoning?: string | null
+          checked_at?: string
+        }
+        Update: {
+          id?: string
+          order_id?: number
+          score?: number
+          level?: string
+          signals?: Json
+          recommendation?: string
+          ai_reasoning?: string | null
+          checked_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_fraud_checks_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       active_stores_with_stats: {

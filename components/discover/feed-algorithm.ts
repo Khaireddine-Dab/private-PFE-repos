@@ -170,6 +170,7 @@ export type DiscoverFeedItem = {
   isSponsored?: boolean
   itemId?: number
   itemType?: 'PRODUCT' | 'SERVICE'
+  storeLogoUrl?: string
   hasLiked?: boolean
   hasSaved?: boolean
   hasFollowed?: boolean

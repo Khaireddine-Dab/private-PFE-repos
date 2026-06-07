@@ -4,24 +4,22 @@ import { useState } from 'react';
 
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
-import Hero from '@/components/Hero';
-import TrendingArtists from '@/components/TrendingArtists';
 import Footer from '@/components/Footer';
 import OffersCarouselDemo from '@/components/OffersCarouselDemoBusiness';
-import Sponsors from '@/components/SponsorsDemo';
 import Offers from '@/components/Offers';
-import { CommerceHero } from '@/components/commerce-hero';
 import { LogoCarouselDemo } from "@/components/ui/testimonials";
 import { FloatingAiAssistant } from "@/components/ui/glowing-ai-chat-assistant";
 import ShortAdsSection from '@/components/ShortAdsSection';
-import { SmartStrip, type SmartStripItem } from '@/components/SmartStrip';
 
 const BackgroundScene = dynamic(
   () => import('@/components/BackgroundScene'),
   { ssr: false }
 );
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> d64fada71a7ab83a5082f0d9ff9b139f701493d0
 
 export default function Home() {
   const [isFiltering, setIsFiltering] = useState(false);

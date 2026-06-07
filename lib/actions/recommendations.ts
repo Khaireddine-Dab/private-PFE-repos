@@ -59,6 +59,7 @@ export async function getPersonalizedReels(): Promise<DiscoverFeedItem[]> {
             stores (
                 id,
                 name,
+                logo_url,
                 city,
                 category
             ),
@@ -159,7 +160,8 @@ export async function getPersonalizedReels(): Promise<DiscoverFeedItem[]> {
                 responseRate: 98
             },
             itemId: reel.item_id,
-            itemType: reel.items?.item_type
+            itemType: reel.items?.item_type,
+            storeLogoUrl: store.logo_url || undefined
         } as DiscoverFeedItem;
     });
 

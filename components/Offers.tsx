@@ -17,7 +17,7 @@ export default function OfferCarouselDemo() {
         setIsLoading(true);
         
         // Fetch user interactions and products in parallel
-        const [interactions, products] = await Promise.all([
+        const [interactions, items] = await Promise.all([
           hasUserInteractions(),
           getLatestItems(10)
         ]);
@@ -25,17 +25,18 @@ export default function OfferCarouselDemo() {
         setHasInteractions(interactions);
 
         // Map products to Offer format
-        const mappedOffers: Offer[] = products.slice(0, 5).map((product: any, index) => ({
-          id: product.id,
-          imageSrc: product.main_image || "https://images.unsplash.com/photo-1578926314433-ed0e0e26f2dc?q=80&w=1966&auto=format&fit=crop",
-          imageAlt: product.name,
+        const mappedOffers: Offer[] = items.slice(0, 5).map((items: any, index) => ({
+          id: items.id,
+          imageSrc: items.main_image || "https://images.unsplash.com/photo-1578926314433-ed0e0e26f2dc?q=80&w=1966&auto=format&fit=crop",
+          imageAlt: items.name,
           tag: "Offer",
-          title: product.name,
-          description: product.description || `৳${product.price}`,
-          brandLogoSrc: product.stores?.logo_url || "https://images.unsplash.com/photo-1599305445671-97f00feacb58?q=80&w=200&auto=format&fit=crop",
-          brandName: product.stores?.name || "Shop",
-          promoCode: `PROMO${product.id}`,
-          href: `/product/${product.id}`,
+          catégorie: items.category,
+          title: items.name,
+          description: items.description || `৳${items.price}`,
+          brandLogoSrc: items.stores?.logo_url,
+          brandName: items.stores?.name || "Shop",
+          href: items.item_type === 'SERVICE' ? `/merchants/service/${items.id}` : `/merchants/product/${items.id}`,
+          storeId: items.store_id,
         }));
 
         setOffers(mappedOffers);
