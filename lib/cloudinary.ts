@@ -53,14 +53,14 @@ export async function uploadToCloudinary(
         statusText: response.statusText,
         error: errorData
       });
-      return null;
+      throw new Error(errorData.error?.message || errorData.message || 'Unknown Cloudinary error');
     }
 
     const data = await response.json();
     return data.secure_url;
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error uploading to Cloudinary:', error);
-    return null;
+    throw new Error(error.message || 'Network error during upload');
   }
 }
 
@@ -75,7 +75,10 @@ export async function uploadMultipleToCloudinary(
   folder?: string
 ): Promise<string[]> {
   const results = await Promise.all(
-    files.map((file) => uploadToCloudinary(file, folder))
+    files.map((file) => uploadToCloudinary(file, folder).catch((err) => {
+      console.error(`Failed to upload file: ${file.name}`, err);
+      return null;
+    }))
   );
   return results.filter((url): url is string => url !== null);
 }

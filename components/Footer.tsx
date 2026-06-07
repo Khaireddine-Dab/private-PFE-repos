@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
+import Link from 'next/link';
 
 export default function Footer() {
   const footerRef = useRef<HTMLElement>(null);
@@ -59,7 +60,7 @@ export default function Footer() {
 
         <div className="w-px h-3 bg-white/20" />
 
-        <span className="opacity-60">S'inscrire </span>
+        <Link href="/login" className="hover:text-white transition opacity-90">S'inscrire</Link>
       </div>
     </footer>
   );

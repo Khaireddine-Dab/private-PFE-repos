@@ -5,13 +5,15 @@ import { useParams, useRouter } from 'next/navigation';
 import { 
   getBusinessReels, 
   deleteReel,
-  publishReel
+  publishReel,
+  uploadAndPublishReel
 } from '@/lib/actions/reels';
 import { useUpload } from '@/lib/context/UploadContext';
 import { 
   getDashboardStories, 
   deleteStory, 
-  publishStory 
+  publishStory,
+  uploadAndPublishStory 
 } from '@/lib/actions/stories';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -132,6 +134,7 @@ export default function MediaManagementPage() {
     setSelectedFilter('none');
     setThumbnailUrl('');
     setRecordingTime(0);
+    setIsUploading(false);
     if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
   };
 
@@ -144,34 +147,50 @@ export default function MediaManagementPage() {
     if (!cloudName) return toast.error('Cloudinary non configuré');
 
     setIsDialogOpen(false); // Close dialog immediately
-    
-    startUpload(selectedFile, {
-      preset: 'ro2ya_reels',
-      cloudName,
-      onSuccess: async (result) => {
-        if (activeTab === 'reels') {
-          await publishReel({
-            storeId,
-            mediaPath: result.secure_url,
-            mediaType: selectedFile.type.startsWith('video/') ? 'video' : 'image',
-            title,
-            price: Number(price) || 0,
-            category,
-            thumbnailUrl: thumbnailUrl || undefined,
-            metadata: { filter: selectedFilter }
-          });
-        } else {
-          await publishStory({
-            storeId,
-            mediaUrl: result.secure_url,
-            mediaType: selectedFile.type.startsWith('video/') ? 'video' : 'image',
-            caption: title
-          });
+    setIsUploading(true);
+
+    if (activeTab === 'reels') {
+      try {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('storeId', storeId.toString());
+        formData.append('title', title);
+        formData.append('price', price || '0');
+        formData.append('category', category);
+        formData.append('filter', selectedFilter);
+
+        const res = await uploadAndPublishReel(formData);
+        if (!res.success) {
+          throw new Error(res.error);
         }
+        
+        toast.success("Publication réussie !");
         fetchData();
         resetForm();
+      } catch (err: any) {
+        toast.error(`Erreur: ${err.message}`);
+        setIsUploading(false);
       }
-    });
+    } else {
+      try {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('storeId', storeId.toString());
+        formData.append('caption', title);
+
+        const res = await uploadAndPublishStory(formData);
+        if (!res.success) {
+          throw new Error(res.error);
+        }
+
+        toast.success("Story publiée !");
+        fetchData();
+        resetForm();
+      } catch (err: any) {
+        toast.error(`Erreur: ${err.message}`);
+        setIsUploading(false);
+      }
+    }
   };
 
   const handleDelete = async (reelId: number) => {
@@ -230,6 +249,12 @@ export default function MediaManagementPage() {
     recorder.ondataavailable = (e) => chunksRef.current.push(e.data);
     recorder.onstop = () => {
       const b = new Blob(chunksRef.current, { type: 'video/webm' });
+      if (b.size > 50 * 1024 * 1024) {
+        toast.error('La vidéo enregistrée est trop volumineuse (plus de 50 Mo). Veuillez enregistrer une vidéo plus courte.');
+        stopCamera();
+        resetForm();
+        return;
+      }
       const f = new File([b], 'capture.webm', { type: 'video/webm' });
       setSelectedFile(f); 
       setPreviewUrl(URL.createObjectURL(b)); 
@@ -254,6 +279,14 @@ export default function MediaManagementPage() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    // Check file size (50MB max) to prevent network crashes with Cloudinary
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error('Le fichier est trop volumineux. La taille maximale est de 50 Mo.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+    
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
   };

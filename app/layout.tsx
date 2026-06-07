@@ -6,7 +6,7 @@ import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "Phantom Marketplace",
-  description: "A modern marketplace with immersive 3D background",
+  description: "A modern marketplace",
 };
 
 import dynamic from 'next/dynamic';

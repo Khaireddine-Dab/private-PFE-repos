@@ -97,6 +97,23 @@ export default function AddBusinessPage() {
     return () => clearTimeout(debounce);
   }, [formData.companyName]);
 
+  // Redirect unauthenticated users to login (preserve redirect back)
+  const supabase = createClient();
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (mounted && !user) {
+          router.push(`/login?redirect=/merchants/business/add`);
+        }
+      } catch (e) {
+        // ignore — submission enforces auth server-side
+      }
+    })();
+    return () => { mounted = false };
+  }, []);
+
   // ─── Handlers ──────────────────────────────────────────────────
 
   const handleSelectDbResult = (result: UnifiedSearchResult) => {
@@ -190,8 +207,8 @@ export default function AddBusinessPage() {
       if (formData.directoryId) fd.append('directoryId', formData.directoryId);
       if (formData.serviceDirectoryId) fd.append('serviceDirectoryId', formData.serviceDirectoryId);
       if (formData.googlePlaceId) fd.append('googlePlaceId', formData.googlePlaceId);
-      if (formData.lat) fd.append('lat', formData.lat.toString());
-      if (formData.lng) fd.append('lng', formData.lng.toString());
+      fd.append('lat', formData.lat.toString());
+      fd.append('lng', formData.lng.toString());
       if (formData.logo) fd.append('logo', formData.logo);
       if (formData.justificatif) fd.append('justificatif', formData.justificatif);
 
