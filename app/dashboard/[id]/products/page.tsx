@@ -124,12 +124,13 @@ export default function ProductsPage() {
     let imageUrl = productData.image || '';
     if (productData.imageFile) {
       toast.loading("Upload de l'image principale...");
-      const url = await uploadToCloudinary(productData.imageFile, cloudinaryFolder);
-      if (!url) {
-        toast.error("Échec de l'upload de l'image principale sur Cloudinary. L'enregistrement est annulé.");
+      try {
+        const url = await uploadToCloudinary(productData.imageFile, cloudinaryFolder);
+        imageUrl = url;
+      } catch (err: any) {
+        toast.error(`Échec de l'upload: ${err.message}`);
         return; // BLOCK SAVE if upload fails
       }
-      imageUrl = url;
     }
 
     // Upload gallery images to Cloudinary → map to image_2 and image_3

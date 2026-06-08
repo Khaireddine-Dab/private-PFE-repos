@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { generateEmbedding } from '@/lib/openrouter-embeddings'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -198,7 +199,8 @@ export async function addBusiness(formData: FormData) {
     }
 
     // 5. Mettre à jour le rôle utilisateur → PRO
-    const { error: userUpdateError } = await supabase
+    const adminClient = createAdminClient()
+    const { error: userUpdateError } = await adminClient
         .from('users')
         .upsert({
             id: user.id,

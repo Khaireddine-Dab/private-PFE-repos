@@ -90,16 +90,16 @@ function SettingsTab({ user, onUpdate, router }: { user: any, onUpdate: () => vo
     }
   };
 
-  const handleResetPassword = async () => {
-    if (!form.email) return;
-    setResetLoading(true);
+  const handleResetPassword = () => {
+    // Redirect user to the password update page where they can change their password
     try {
-      const result = await sendPasswordResetEmail(form.email);
-      if ('error' in result) throw new Error(result.error);
-      toast.success('E-mail de réinitialisation envoyé ! Vérifiez votre boîte de réception.');
-    } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de l\'envoi de l\'e-mail');
-    } finally {
+      console.log('[SettingsTab] handleResetPassword: navigating to /profile/update-password');
+      setResetLoading(true);
+      // Use a full-page navigation to avoid client-side routing edge-cases
+      window.location.href = '/profile/update-password';
+    } catch (err) {
+      console.error('Navigation error to update-password:', err);
+      toast.error('Impossible de naviguer vers la page de changement de mot de passe');
       setResetLoading(false);
     }
   };

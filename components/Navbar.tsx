@@ -1129,35 +1129,53 @@ export default function Navbar() {
 
               {user ? (
                 <>
-                  {/* Dashboard/Add Business - ONLY FOR PRO/BUSINESS OWNER */}
+                  {/* Role-specific CTA: clients see Add Business, business owners see Dashboard */}
                   {(() => {
-                    const effectiveRole = userRole?.toLowerCase() || user.user_metadata?.role?.toLowerCase();
-                    
-                    return storeId && storeStatus !== 'REJECTED' ? (
-                      <div className="flex items-center gap-2">
-                        <Link href={`/dashboard/${storeId}`}>
-                          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:shadow-lg hover:shadow-red-600/20 text-sm font-bold text-white transition-all ring-1 ring-white/10">
-                            <FolderKanban className="w-4 h-4" />
-                            Dashboard
-                          </button>
-                        </Link>
+                    const effectiveRole = (userRole || user.user_metadata?.role || '').toLowerCase();
+
+                    // Business owners / PRO / Admin: show dashboard (if they have a store) or Add Business fallback
+                    if (effectiveRole === 'business_owner' || effectiveRole === 'pro' || effectiveRole === 'admin') {
+                      return storeId && storeStatus !== 'REJECTED' ? (
+                        <div className="flex items-center gap-2">
+                          <Link href={`/dashboard/${storeId}`}>
+                            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:shadow-lg hover:shadow-red-600/20 text-sm font-bold text-white transition-all ring-1 ring-white/10">
+                              <FolderKanban className="w-4 h-4" />
+                              Dashboard
+                            </button>
+                          </Link>
+                          <Link href="/merchants/business/add">
+                            <button 
+                              title="Ajouter un autre établissement"
+                              className="flex items-center justify-center w-10 h-10 rounded-xl bg-green-600 hover:bg-green-700 text-white transition shadow-lg shadow-green-600/20"
+                            >
+                              <Plus className="w-5 h-5" />
+                            </button>
+                          </Link>
+                        </div>
+                      ) : (
                         <Link href="/merchants/business/add">
-                          <button 
-                            title="Ajouter un autre établissement"
-                            className="flex items-center justify-center w-10 h-10 rounded-xl bg-green-600 hover:bg-green-700 text-white transition shadow-lg shadow-green-600/20"
-                          >
-                            <Plus className="w-5 h-5" />
+                          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-sm font-semibold text-white transition shadow-lg shadow-red-600/20">
+                            <Plus className="w-4 h-4" />
+                            Add Business
                           </button>
                         </Link>
-                      </div>
-                    ) : (
-                      <Link href="/merchants/business/add">
-                        <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-sm font-semibold text-white transition shadow-lg shadow-red-600/20">
-                          <Plus className="w-4 h-4" />
-                          Add Business
-                        </button>
-                      </Link>
-                    );
+                      );
+                    }
+
+                    // Clients: show Add Business CTA
+                    if (effectiveRole === 'client' || !effectiveRole) {
+                      return (
+                        <Link href="/merchants/business/add">
+                          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-sm font-semibold text-white transition shadow-lg shadow-red-600/20">
+                            <Plus className="w-4 h-4" />
+                            Add Business
+                          </button>
+                        </Link>
+                      );
+                    }
+
+                    // Default fallback: no action
+                    return null;
                   })()}
 
                     <div className="flex items-center gap-2">

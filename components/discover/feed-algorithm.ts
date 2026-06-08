@@ -252,23 +252,19 @@ export async function fetchDiscoverPageCombined(
 ) {
   // 1. Fetch real personalized reels on page 0
   let personalizedReels: DiscoverFeedItem[] = [];
-  if (page === 0) {
-    try {
-      personalizedReels = await getPersonalizedReels();
-    } catch (e) {
-      console.error("Error fetching personalized reels for sync:", e);
-    }
+  try {
+    personalizedReels = await getPersonalizedReels();
+  } catch (e) {
+    console.error('Error fetching personalized reels for sync:', e);
+    personalizedReels = [];
   }
 
-  // 2. Mock items
-  const raw = Array.from({ length: PAGE_SIZE }, (_, index) => createRegularItem(page, index));
-  
-  // 3. Rank mock items
-  const ranked = rankFeedItems(raw, userPreferences);
+  // Paginate the real personalized reels and return only real items (no mock items)
+  const start = page * PAGE_SIZE
+  const pageItems = personalizedReels.slice(start, start + PAGE_SIZE)
 
-  // 4. Combine
-  const combined = page === 0 ? [...personalizedReels, ...ranked] : ranked;
-  
-  // 5. Insert sponsored
-  return insertSponsoredPosts(combined, sponsoredPool, 5);
+  // If there are no real items for this page, return an empty array (but still allow sponsored insertion)
+  const combined = pageItems
+
+  return insertSponsoredPosts(combined, sponsoredPool, 5)
 }

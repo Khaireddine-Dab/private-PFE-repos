@@ -73,7 +73,8 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
     updateTasks(prev => [newTask, ...prev]);
 
     const isVideo = file.type.startsWith('video/');
-    const url = `https://api.cloudinary.com/v1_1/${options.cloudName}/${isVideo ? 'video' : 'image'}/upload`;
+    const safeCloudName = options.cloudName.trim();
+    const url = `https://api.cloudinary.com/v1_1/${safeCloudName}/${isVideo ? 'video' : 'image'}/upload`;
 
     xhr.upload.addEventListener('progress', (e) => {
       if (e.lengthComputable) {
@@ -91,14 +92,19 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
           await options.onSuccess(result);
           updateTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'success' as const } : t));
           toast.success(`Publication réussie: ${file.name}`);
-        } catch (err) {
+        } catch (err: any) {
           console.error('Success callback failed:', err);
           updateTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'error' as const } : t));
-          toast.error(`Erreur après upload: ${file.name}`);
+          toast.error(`[Serveur Supabase] ${err.message}`);
         }
       } else {
         updateTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'error' as const } : t));
-        toast.error(`Échec upload: ${file.name}`);
+        let errorMsg = 'Erreur inconnue';
+        try {
+          const result = JSON.parse(xhr.responseText);
+          errorMsg = result.error?.message || result.message || errorMsg;
+        } catch (e) {}
+        toast.error(`[Cloudinary API] ${errorMsg}`);
       }
 
       // Cleanup after delay
@@ -109,13 +115,14 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
 
     xhr.addEventListener('error', () => {
       updateTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'error' as const } : t));
-      toast.error(`Erreur réseau: ${file.name}`);
+      toast.error(`[Navigateur] Bloqué par le navigateur (Adblock ou erreur CORS).`);
+      console.error("XHR Network Error for URL:", url);
       setTimeout(() => updateTasks(prev => prev.filter(t => t.id !== id)), 5000);
     });
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', options.preset);
+    formData.append('upload_preset', options.preset.trim());
     if (options.folder) {
         formData.append('folder', options.folder.replace(/\//g, '-'));
     }
