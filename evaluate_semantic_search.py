@@ -85,13 +85,22 @@ class SemanticSearchEvaluator:
             precisions_at_10.append(p10)
             relevance_scores.append(1.0 if search_result['relevant'] else 0.0)
             
+            # Calculer reciprocal rank
+            rr = 0.0
+            for i, res in enumerate(search_result['results']):
+                if any(exp.lower() in res.lower() or res.lower() in exp.lower() 
+                       for exp in query['expected_results']):
+                    rr = 1.0 / (i + 1)
+                    break
+            
             results_list.append({
                 'query_id': query['query_id'],
                 'query': query['query'],
                 'language': query['language'],
                 'precision_at_5': p5,
                 'precision_at_10': p10,
-                'relevant': search_result['relevant']
+                'relevant': search_result['relevant'],
+                'reciprocal_rank': rr
             })
         
         # Métriques globales
@@ -114,11 +123,7 @@ class SemanticSearchEvaluator:
         if not results_list:
             return 0.0
         
-        mrr_sum = 0
-        for result in results_list:
-            if result['relevant']:
-                mrr_sum += 1.0 / (result['query_id'] + 1)
-        
+        mrr_sum = sum(result.get('reciprocal_rank', 0.0) for result in results_list)
         return mrr_sum / len(results_list)
     
     def generate_report(self) -> str:

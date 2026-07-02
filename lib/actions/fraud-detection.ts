@@ -285,6 +285,70 @@ function computeHeuristicScore(signals: FraudSignal[]): number {
 // ═══════════════════════════════════════════════════════════════════════════════
 // Lines 223-303 of ARCHITECTURE
 
+async function analyzeWithGemini(prompt: string): Promise<string | null> {
+  const geminiKey = process.env.GEMINI_API_KEY
+  if (!geminiKey) return null
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`
+    
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 150, temperature: 0.7 },
+      }),
+    })
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+    if (text) {
+      console.log('[Fraud AI] Gemini analysis succeeded')
+      return text
+    }
+  } catch (err: any) {
+    console.warn('[Fraud AI] Gemini analysis failed:', err.message)
+  }
+  return null
+}
+
+async function analyzeWithGroq(prompt: string): Promise<string | null> {
+  const groqKey = process.env.GROQ_API_KEY
+  if (!groqKey) return null
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${groqKey}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          { role: 'system', content: 'Tu es un expert en detection de fraude pour une marketplace e-commerce. Reponds en francais, sois concis.' },
+          { role: 'user', content: prompt },
+        ],
+        max_tokens: 150,
+        temperature: 0.7,
+      }),
+    })
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    const text = data.choices?.[0]?.message?.content?.trim()
+    if (text) {
+      console.log('[Fraud AI] Groq analysis succeeded')
+      return text
+    }
+  } catch (err: any) {
+    console.warn('[Fraud AI] Groq analysis failed:', err.message)
+  }
+  return null
+}
+
 async function analyzeWithAI(
   ctx: FraudContext,
   signals: FraudSignal[],
@@ -292,28 +356,37 @@ async function analyzeWithAI(
 ): Promise<string> {
   // Only call AI if there are signals or score >= 15
   if (signals.length === 0 && heuristicScore < 15) {
-    return "Aucun signal de fraude détecté. Analyse rapide approuvée.";
+    return "Aucun signal de fraude detecte. Analyse rapide approuvee.";
   }
 
   const signalDescriptions = signals
     .map(s => `[${s.severity.toUpperCase()}] ${s.type}: ${s.description} (+${s.weight}pts)`)
     .join("\n");
 
-  const prompt = `Tu es un système anti-fraude pour Ro2ya, une marketplace tunisienne.
+  const prompt = `Tu es un systeme anti-fraude pour Ro2ya, une marketplace tunisienne.
 
-Analyse cette ${ctx.entity_type === 'ORDER' ? 'COMMANDE' : 'RÉSERVATION'} suspecte et donne un avis court (2-3 phrases max) en français:
+Analyse cette ${ctx.entity_type === 'ORDER' ? 'COMMANDE' : 'RESERVATION'} suspecte et donne un avis court (2-3 phrases max) en francais:
 
 CONTEXTE:
 - Type: ${ctx.entity_type}
 - Montant: ${ctx.total} TND
-- Quantité: ${ctx.quantity ?? 'N/A'}
+- Quantite: ${ctx.quantity ?? 'N/A'}
 - Score heuristique: ${heuristicScore.toFixed(0)}/100
 
-SIGNAUX DÉTECTÉS:
+SIGNAUX DETECTES:
 ${signalDescriptions || "Aucun"}
 
-Donne uniquement ton analyse du risque et si le merchant doit approuver, vérifier manuellement ou rejeter. Sois direct et concis.`;
+Donne uniquement ton analyse du risque et si le merchant doit approuver, verifier manuellement ou rejeter. Sois direct et concis.`;
 
+  // 1. Try Gemini
+  let analysis = await analyzeWithGemini(prompt)
+  if (analysis) return analysis
+
+  // 2. Try Groq
+  analysis = await analyzeWithGroq(prompt)
+  if (analysis) return analysis
+
+  // 3. Fallback to OpenRouter
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -348,12 +421,12 @@ Donne uniquement ton analyse du risque et si le merchant doit approuver, vérifi
     console.error("AI analysis error:", error);
     // Fallback reasoning based on score
     if (heuristicScore >= 75) {
-      return "Score de risque très élevé. Vérification manuelle fortement recommandée avant validation.";
+      return "Score de risque tres eleve. Verification manuelle fortement recommandee avant validation.";
     }
     if (heuristicScore >= 55) {
-      return "Plusieurs signaux suspects détectés. Contacter le client pour vérification.";
+      return "Plusieurs signaux suspects detectes. Contacter le client pour verification.";
     }
-    return "Signaux mineurs détectés. Peut être approuvé avec vigilance.";
+    return "Signaux mineurs detectes. Peut etre approuve avec vigilance.";
   }
 }
 

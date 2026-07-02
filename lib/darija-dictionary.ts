@@ -7,31 +7,10 @@
  */
 
 // Stub export — À charger dynamiquement côté serveur
-let corpusPart1 = {}
-let corpusPart2 = {}
-let corpusPart3 = {}
-let corpusPart4 = {}
-
-if (typeof window === 'undefined') {
-  try {
-    const fs = eval("require('fs')")
-    const path = eval("require('path')")
-    const loadPart = (filename: string) => {
-      const filePath = path.join(process.cwd(), 'lib', filename)
-      if (fs.existsSync(filePath)) {
-        return JSON.parse(fs.readFileSync(filePath, 'utf8'))
-      }
-      return {}
-    }
-    corpusPart1 = loadPart('darija-corpus-1.json')
-    corpusPart2 = loadPart('darija-corpus-2.json')
-    corpusPart3 = loadPart('darija-corpus-3.json')
-    corpusPart4 = loadPart('darija-corpus-4.json')
-    console.log(`Loaded Darija corpus: Part1(${Object.keys(corpusPart1).length}), Part2(${Object.keys(corpusPart2).length}), Part3(${Object.keys(corpusPart3).length}), Part4(${Object.keys(corpusPart4).length})`)
-  } catch (err) {
-    console.warn('Failed to load Darija corpus parts from disk:', err)
-  }
-}
+const corpusPart1 = {}
+const corpusPart2 = {}
+const corpusPart3 = {}
+const corpusPart4 = {}
 
 export const DARIJA_TUNISIAN_DICTIONARY: Record<string, { french: string; category: string }> = {
   ...corpusPart1,

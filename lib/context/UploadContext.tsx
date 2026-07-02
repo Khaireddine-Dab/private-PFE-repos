@@ -72,9 +72,7 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
 
     updateTasks(prev => [newTask, ...prev]);
 
-    const isVideo = file.type.startsWith('video/');
-    const safeCloudName = options.cloudName.trim();
-    const url = `https://api.cloudinary.com/v1_1/${safeCloudName}/${isVideo ? 'video' : 'image'}/upload`;
+    const url = '/api/cloudinary/upload';
 
     xhr.upload.addEventListener('progress', (e) => {
       if (e.lengthComputable) {
@@ -122,9 +120,8 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', options.preset.trim());
     if (options.folder) {
-        formData.append('folder', options.folder.replace(/\//g, '-'));
+        formData.append('folder', options.folder);
     }
 
     xhr.open('POST', url, true);

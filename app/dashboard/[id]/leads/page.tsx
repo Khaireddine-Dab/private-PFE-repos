@@ -14,12 +14,19 @@ import {
   Check,
   X as XIcon,
   ShieldAlert,
+  ShieldCheck,
+  Sparkles,
+  AlertTriangle,
+  CheckCircle2,
+  ShieldQuestion,
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { updateBookingStatus } from '@/lib/actions/reservation';
 import { toast } from 'sonner';
 import { blockUser } from '@/lib/actions/friendships';
+import { analyzeFraud, saveFraudAnalysis } from '@/lib/actions/fraud-detection';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 type LeadType = 'all' | 'order' | 'booking';
 
@@ -32,6 +39,63 @@ export default function LeadsPage() {
   const [filterType, setFilterType] = useState<LeadType>('all');
   const [sortBy, setSortBy] = useState<'recent' | 'oldest'>('recent');
   const [updatingIds, setUpdatingIds] = useState<Record<number, boolean>>({});
+
+  const [selectedLead, setSelectedLead] = useState<any | null>(null);
+  const [isFraudDialogOpen, setIsFraudDialogOpen] = useState(false);
+  const [isAnalyzingFraud, setIsAnalyzingFraud] = useState(false);
+
+  const handleAnalyzeFraud = async (lead: any) => {
+    setSelectedLead(lead);
+    setIsFraudDialogOpen(true);
+
+    // If fraud details are already calculated and saved, no need to rerun
+    if (lead.fraud) return;
+
+    setIsAnalyzingFraud(true);
+    try {
+      const context = {
+        customer_id: lead.customer_id,
+        store_id: storeId,
+        item_id: lead.items?.id || 0,
+        quantity: lead.quantity || 1,
+        total: lead.amount,
+        delivery_address: lead.delivery_address || '',
+        entity_type: lead.leadType === 'order' ? 'ORDER' as const : 'BOOKING' as const
+      };
+
+      const analysis = await analyzeFraud(context);
+      
+      // Save to DB
+      await saveFraudAnalysis(lead.id, analysis, context.entity_type);
+
+      // Update local state so lead now has fraud data
+      const updatedFraud = {
+        score: analysis.score,
+        level: analysis.level,
+        recommendation: analysis.recommendation,
+        ai_reasoning: analysis.ai_reasoning,
+        signals: analysis.signals
+      };
+
+      setLeads(prev => ({
+        orders: lead.leadType === 'order'
+          ? prev.orders.map(o => o.id === lead.id ? { ...o, fraud: updatedFraud } : o)
+          : prev.orders,
+        bookings: lead.leadType === 'booking'
+          ? prev.bookings.map(b => b.id === lead.id ? { ...b, fraud: updatedFraud } : b)
+          : prev.bookings
+      }));
+
+      // Update selected lead details in modal
+      setSelectedLead((prev: any) => prev ? { ...prev, fraud: updatedFraud } : null);
+      toast.success("Analyse de fraude complétée avec succès");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Échec de l'analyse de fraude : " + (err.message || "Erreur inconnue"));
+    } finally {
+      setIsAnalyzingFraud(false);
+    }
+  };
 
   const fetchData = () => {
     if (storeId) {
@@ -280,6 +344,15 @@ export default function LeadsPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
+                                onClick={() => handleAnalyzeFraud(lead)}
+                                className="h-8 px-3 text-[9px] font-black uppercase tracking-widest border-indigo-500/20 text-indigo-600 hover:bg-indigo-650 hover:text-white transition-all active:scale-95 rounded-lg shadow-sm"
+                              >
+                                <ShieldAlert className="w-3.5 h-3.5 mr-1" />
+                                Analyser Fraude
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
                                 onClick={() => handleStatusUpdate(lead.id, lead.leadType, lead.leadType === 'booking' ? 'CONFIRMED' : 'VALIDATED')}
                                 disabled={updatingIds[lead.id]}
                                 className="h-8 px-3 text-[9px] font-black uppercase tracking-widest border-emerald-500/20 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all active:scale-95 rounded-lg shadow-sm"
@@ -325,6 +398,154 @@ export default function LeadsPage() {
       {allLeads.length > 0 && (
         <div className="text-center text-sm text-muted-foreground">Affichage de {allLeads.length} interactions</div>
       )}
+
+      {/* Fraud Detection Details Modal */}
+      <Dialog open={isFraudDialogOpen} onOpenChange={setIsFraudDialogOpen}>
+        <DialogContent className="sm:max-w-lg bg-white dark:bg-zinc-950 border-0 shadow-2xl rounded-3xl p-8 max-h-[85vh] overflow-y-auto">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-gray-900 dark:text-zinc-50 font-black text-2xl tracking-tight flex items-center gap-2">
+              <ShieldAlert className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+              Analyse de Risque & Fraude
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500 dark:text-zinc-400 font-medium">
+              Détails de détection de fraude pour {selectedLead?.leadType === 'order' ? 'la commande' : 'la réservation'} #{selectedLead?.id}
+            </DialogDescription>
+          </DialogHeader>
+
+          {isAnalyzingFraud ? (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
+              <p className="text-sm font-black uppercase tracking-widest text-indigo-600 animate-pulse">
+                Calcul du score de risque IA...
+              </p>
+            </div>
+          ) : selectedLead?.fraud ? (
+            <div className="space-y-6">
+              {/* Risk Level and Meter */}
+              <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-6 shadow-sm">
+                <div className="space-y-1">
+                  <p className="text-xs text-zinc-400 font-bold uppercase tracking-widest">Niveau de risque</p>
+                  <h4 className={`text-2xl font-black uppercase tracking-tight ${
+                    selectedLead.fraud.level === 'safe' ? 'text-emerald-600' :
+                    selectedLead.fraud.level === 'suspicious' ? 'text-amber-500' :
+                    'text-rose-600'
+                  }`}>
+                    {selectedLead.fraud.level === 'safe' ? 'SÛR (Safe)' :
+                     selectedLead.fraud.level === 'suspicious' ? 'SUSPECT' :
+                     selectedLead.fraud.level === 'high_risk' ? 'RISQUE ÉLEVÉ' : 'BLOQUÉ'}
+                  </h4>
+                  <p className="text-[10px] text-zinc-400 uppercase tracking-widest">
+                    Score: <span className="font-bold text-zinc-900 dark:text-zinc-100">{selectedLead.fraud.score}/100</span>
+                  </p>
+                </div>
+                
+                {/* Visual circle score indicator */}
+                <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle
+                      cx="32"
+                      cy="32"
+                      r="28"
+                      className="stroke-zinc-200 dark:stroke-zinc-800 fill-none"
+                      strokeWidth="6"
+                    />
+                    <circle
+                      cx="32"
+                      cy="32"
+                      r="28"
+                      className={`fill-none transition-all duration-1000 ${
+                        selectedLead.fraud.level === 'safe' ? 'stroke-emerald-500' :
+                        selectedLead.fraud.level === 'suspicious' ? 'stroke-amber-500' :
+                        'stroke-rose-500'
+                      }`}
+                      strokeWidth="6"
+                      strokeDasharray={175.9}
+                      strokeDashoffset={175.9 - (175.9 * selectedLead.fraud.score) / 100}
+                    />
+                  </svg>
+                  <span className="absolute text-sm font-black text-zinc-900 dark:text-zinc-100">{Math.round(selectedLead.fraud.score)}%</span>
+                </div>
+              </div>
+
+              {/* Recommendation Badge */}
+              <div className={`p-4 rounded-xl border flex items-center gap-3 ${
+                selectedLead.fraud.recommendation === 'approve' ? 'bg-emerald-50/50 border-emerald-100 text-emerald-700' :
+                selectedLead.fraud.recommendation === 'review' ? 'bg-amber-50/50 border-amber-100 text-amber-700' :
+                'bg-rose-50/50 border-rose-100 text-rose-700'
+              }`}>
+                {selectedLead.fraud.recommendation === 'approve' ? <CheckCircle2 className="w-5 h-5" /> :
+                 selectedLead.fraud.recommendation === 'review' ? <AlertTriangle className="w-5 h-5" /> :
+                 <ShieldAlert className="w-5 h-5" />}
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wider opacity-75">Recommandation du système</p>
+                  <p className="text-sm font-bold uppercase tracking-tight">
+                    {selectedLead.fraud.recommendation === 'approve' ? 'Approuver la demande' :
+                     selectedLead.fraud.recommendation === 'review' ? 'Vérification manuelle requise' :
+                     'Rejeter / Refuser la demande'}
+                  </p>
+                </div>
+              </div>
+
+              {/* AI Reasoning */}
+              <div className="space-y-2">
+                <h5 className="text-xs font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                  Raisonnement IA (Multi-Couches)
+                </h5>
+                <div className="p-4 rounded-xl bg-indigo-50/20 border border-indigo-100/10 text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed italic">
+                  "{selectedLead.fraud.ai_reasoning}"
+                </div>
+              </div>
+
+              {/* Heuristic Signals details */}
+              <div className="space-y-3">
+                <h5 className="text-xs font-black uppercase tracking-widest text-zinc-400">
+                  Signaux heuristiques ({selectedLead.fraud.signals?.length || 0})
+                </h5>
+                
+                {(!selectedLead.fraud.signals || selectedLead.fraud.signals.length === 0) ? (
+                  <div className="p-4 text-center rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-dashed border-zinc-200 dark:border-zinc-800 text-xs text-zinc-400">
+                    Aucun signal suspect détecté pour cette transaction.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {selectedLead.fraud.signals.map((sig: any, index: number) => (
+                      <div key={index} className="p-3.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 flex items-start gap-3 shadow-xs">
+                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest shrink-0 mt-0.5 ${
+                          sig.severity === 'high' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                          sig.severity === 'medium' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                          'bg-zinc-100 text-zinc-500'
+                        }`}>
+                          {sig.severity}
+                        </span>
+                        <div className="space-y-0.5">
+                          <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">{sig.description}</p>
+                          <p className="text-[9px] text-zinc-400 uppercase tracking-widest">
+                            Impact: +{sig.weight} pts • {sig.type}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="py-8 text-center text-xs text-zinc-400">
+              Aucune donnée d'analyse disponible.
+            </div>
+          )}
+          
+          <div className="mt-8 flex justify-end">
+            <Button
+              onClick={() => setIsFraudDialogOpen(false)}
+              className="px-6 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-black uppercase tracking-widest rounded-xl hover:opacity-90 transition-all active:scale-95 shadow-sm"
+            >
+              Fermer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

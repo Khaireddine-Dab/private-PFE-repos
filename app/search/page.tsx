@@ -8,12 +8,13 @@ const ResultsMap = dynamic(() => import('@/components/ui/ResultsMap'), { ssr: fa
 import { Search, SlidersHorizontal, Loader2, Package, LayoutGrid, Store, Tags, Star } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { searchStores, searchItems, SearchResultItem, searchServicesDirectory } from '@/lib/actions/search';
+import type { SearchResultItem } from '@/lib/types/search';
 import { ProductCard } from '@/components/ProductCard';
 import { ServiceCard } from '@/components/ServiceCard';
 import { Business } from '@/types/business';
 import { useTracking } from '@/hooks/useTracking'; // ✅ ADDED
 import SearchFilters, { type CategoryType } from '@/components/search/SearchFilters';
+import { triggerInstantRecommendation } from '@/lib/actions/ai-notifications';
 
 // Calcul de la distance via la formule Haversine (en km)
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -215,7 +216,21 @@ function SearchPageContent() {
     };
 
     fetchAllResults();
-  }, [query, location]); // Dependencies
+  }, [query, location, category]); // Dependencies
+
+  // Trigger instant recommendation when category search is detected (high-intent)
+  useEffect(() => {
+    if (category) {
+      const triggerInstant = async () => {
+        try {
+          await triggerInstantRecommendation(category);
+        } catch (error) {
+          console.warn('[SearchPage] Instant recommendation error:', error);
+        }
+      };
+      triggerInstant();
+    }
+  }, [category]);
 
   // When user clicks a marker: highlight it, scroll list to card, open map popup
   const handleMarkerClick = (businessId: string) => {

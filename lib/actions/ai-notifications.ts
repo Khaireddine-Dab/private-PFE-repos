@@ -60,6 +60,64 @@ export async function triggerPersonalizedAINotifications() {
  * a high-intent search to provide instant recommendation alerts.
  */
 export async function triggerInstantRecommendation(category: string) {
-    // Logic for immediate notification based on specific category intent
-    // (e.g. user just searched for "Wedding Dress" -> notify of top wedding stores)
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Unauthorized' }
+
+  try {
+    // 1. Fetch reels filtered by the high-intent category
+    const topReels = await getPersonalizedReels()
+    const categoryMatches = topReels.filter(
+      (reel) => reel.category?.toLowerCase() === category.toLowerCase()
+    )
+
+    if (categoryMatches.length === 0) {
+      return { success: true, message: `No matches found for category: ${category}` }
+    }
+
+    const bestMatch = categoryMatches[0]
+
+    // 2. Lower threshold for instant/intent-based triggers (user already showed interest)
+    // A category search already implies intent, so city+store match alone (~70pts) is enough
+    // But we still require some baseline personalization (>60) to avoid noise
+    if (bestMatch.engagementScore <= 60) {
+      return { success: true, message: 'Score below instant notification threshold' }
+    }
+
+    // 3. Anti-spam: one instant recommendation per category per hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    const { data: existing } = await supabase
+      .from('notifications')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('type', 'AI_RECOMMENDATION')
+      .contains('metadata', { category })
+      .gte('created_at', oneHourAgo)
+      .limit(1)
+
+    if (existing && existing.length > 0) {
+      return { success: true, message: 'Instant notification already sent for this category recently' }
+    }
+
+    // 4. Fire the instant notification with category-specific copy
+    const result = await createNotification({
+      userId: user.id,
+      title: `🔍 On a trouvé pour vous : ${category}`,
+      description: `${bestMatch.merchantName} propose exactement ce que vous cherchez. Découvrez leur sélection maintenant.`,
+      type: 'AI_RECOMMENDATION',
+      link: `/discover?reelId=${bestMatch.id.replace('reel-', '')}&category=${encodeURIComponent(category)}`,
+      metadata: {
+        reelId: bestMatch.id,
+        score: bestMatch.engagementScore,
+        merchantName: bestMatch.merchantName,
+        category,
+        trigger: 'instant_search', // distinguish from scheduled AI notifications
+      },
+    })
+
+    return { success: true, notification: result }
+  } catch (error) {
+    console.error('[AI Notifications] Instant trigger error:', error)
+    return { success: false, error }
+  }
 }

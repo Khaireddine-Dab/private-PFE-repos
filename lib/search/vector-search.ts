@@ -37,7 +37,7 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
 }
 
 export async function vectorSearch(embedding: number[], options: VectorSearchOptions = {}): Promise<SearchResult[]> {
-  const { threshold = 0.18, limit = 50, geoFilter } = options
+  const { threshold = 0.15, limit = 60, geoFilter } = options
 
   if (!embedding || embedding.length === 0) {
     console.warn('⚠️  [VECTOR SEARCH] Embedding vide — étape ignorée')
@@ -59,6 +59,9 @@ export async function vectorSearch(embedding: number[], options: VectorSearchOpt
   }
 
   let results: SearchResult[] = (data ?? []) as SearchResult[]
+
+  // Pré-tri par similarité décroissante : les meilleurs matches arrivent premiers dans le reranker
+  results = results.sort((a, b) => (b.similarity ?? 0) - (a.similarity ?? 0))
 
   if (geoFilter) {
     const { lat, lng, deltaDeg = 1.1 } = geoFilter

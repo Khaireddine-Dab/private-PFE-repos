@@ -16,10 +16,7 @@ const BackgroundScene = dynamic(
   { ssr: false }
 );
 
-<<<<<<< HEAD
 
-=======
->>>>>>> d64fada71a7ab83a5082f0d9ff9b139f701493d0
 
 export default function Home() {
   const [isFiltering, setIsFiltering] = useState(false);

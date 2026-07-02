@@ -32,4 +32,6 @@ export interface Business {
         lat: number;
         lng: number;
     };
+    is_nearby?: boolean;
+    verified?: boolean;
 }

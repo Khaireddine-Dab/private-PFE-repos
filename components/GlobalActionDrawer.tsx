@@ -6,6 +6,7 @@ import { X, CalendarCheck, ShoppingCart } from 'lucide-react';
 import { useActionDrawer } from '@/hooks/useActionDrawer';
 import { ReservationDrawerContent } from './reservation/ReservationDrawerContent';
 import { CheckoutDrawerContent } from './checkout/CheckoutDrawerContent';
+import { toast } from 'sonner';
 
 export default function GlobalActionDrawer() {
   const { isOpen, mode, data, closeDrawer } = useActionDrawer();
@@ -88,7 +89,8 @@ export default function GlobalActionDrawer() {
                   ownerId={data.ownerId}
                   onConfirm={(resData) => {
                     console.log('Reservation confirmed:', resData);
-                    // maybe close or show success
+                    closeDrawer();
+                    toast.success("Votre réservation a bien été enregistrée et est en attente d'acceptation par le commerçant.");
                   }}
                 />
               )}

@@ -99,11 +99,11 @@ export async function hybridSearch(options: HybridSearchOptions): Promise<Search
     if (res.data) res.data.forEach(i => results.push({ ...mapFn(i), result_type: type as any }))
   }
 
-  push(itemsRes,    'ITEM',         i => ({ ...i, image_url: i.main_image, location_city: i.stores?.city, category: i.item_type, metadata: { price: i.price, store_name: i.stores?.name } }))
+  push(itemsRes,    'ITEM',         i => ({ ...i, image_url: i.main_image, location_city: i.stores?.city, category: i.item_type, metadata: { price: i.price, store_id: i.store_id, store_name: i.stores?.name } }))
   push(storesRes,   'STORE',        i => ({ ...i, image_url: i.logo_url, location_city: i.city, metadata: { rating: i.rating_average } }))
   push(businessRes, 'BUSINESS_DIR', i => ({ ...i, name: i.title, image_url: Array.isArray(i.photos) ? i.photos[0] : undefined, location_city: i.city, metadata: { address: i.full_address } }))
-  push(servicesRes, 'SERVICE_DIR',  i => ({ ...i, id: i.service_id, image_url: undefined, location_city: i.city, metadata: { address: i.address } }))
-  push(reelsRes,    'REEL',         i => ({ ...i, name: i.title, image_url: i.media_path, location_city: i.stores?.city, category: i.category, metadata: { store_name: i.stores?.name, views: i.reel_stats?.[0]?.views_count ?? 0 } }))
+  push(servicesRes, 'SERVICE_DIR',  i => ({ ...i, id: i.service_id, image_url: undefined, location_city: i.city, metadata: { address: i.address, store_id: i.store_id } }))
+  push(reelsRes,    'REEL',         i => ({ ...i, name: i.title, image_url: i.media_path, location_city: i.stores?.city, category: i.category, metadata: { store_id: i.store_id, store_name: i.stores?.name, views: i.reel_stats?.[0]?.views_count ?? 0 } }))
 
   if (process.env.NODE_ENV !== 'production') {
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')

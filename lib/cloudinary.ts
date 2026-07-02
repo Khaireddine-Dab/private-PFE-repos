@@ -1,84 +1,61 @@
 /**
  * Cloudinary Upload Utility
- * Handles uploading images and videos to Cloudinary for all product media.
- * Uses the unsigned upload preset 'ro2ya_reels' (same as Reels/Stories).
+ * Uploads via /api/cloudinary/upload (server proxy) to avoid CSP / CORS blocks.
  */
 
-const UPLOAD_PRESET = 'ro2ya_reels';
+const UPLOAD_PRESET = 'ro2ya_reels'
 
-function getCloudName(): string {
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  if (!cloudName) {
-    throw new Error('NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME is not set in .env.local');
+async function uploadViaApi(file: File, folder?: string): Promise<string> {
+  const formData = new FormData()
+  formData.append('file', file)
+  if (folder) formData.append('folder', folder)
+
+  const response = await fetch('/api/cloudinary/upload', {
+    method: 'POST',
+    body: formData,
+  })
+
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new Error(data.error || `Upload échoué (${response.status})`)
   }
-  return cloudName;
+  if (!data.secure_url) {
+    throw new Error('URL Cloudinary manquante dans la réponse')
+  }
+  return data.secure_url
 }
 
 /**
  * Upload a single file (image or video) to Cloudinary.
- * @param file - The File object to upload
- * @param folder - Optional folder path in Cloudinary (e.g. 'products/123')
- * @returns The secure URL of the uploaded file, or null on failure
  */
 export async function uploadToCloudinary(
   file: File,
-  folder?: string
+  folder?: string,
 ): Promise<string | null> {
-  const cloudName = getCloudName();
-
-  const isVideo = file.type.startsWith('video/');
-  const endpoint = isVideo
-    ? `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`
-    : `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
-
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', UPLOAD_PRESET);
-  if (folder) {
-    // Replace slashes with hyphens as a workaround for the "Display name cannot contain slashes" error
-    const safeFolder = folder.replace(/\//g, '-');
-    formData.append('folder', safeFolder);
-  }
-
   try {
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-      console.error('❌ Cloudinary upload error:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData
-      });
-      throw new Error(errorData.error?.message || errorData.message || 'Unknown Cloudinary error');
-    }
-
-    const data = await response.json();
-    return data.secure_url;
+    return await uploadViaApi(file, folder)
   } catch (error: any) {
-    console.error('❌ Error uploading to Cloudinary:', error);
-    throw new Error(error.message || 'Network error during upload');
+    console.error('❌ Error uploading to Cloudinary:', error)
+    throw new Error(error.message || 'Erreur réseau lors de l\'upload')
   }
 }
 
 /**
  * Upload multiple files to Cloudinary in parallel.
- * @param files - Array of File objects
- * @param folder - Optional folder path
- * @returns Array of secure URLs (nulls filtered out)
  */
 export async function uploadMultipleToCloudinary(
   files: File[],
-  folder?: string
+  folder?: string,
 ): Promise<string[]> {
   const results = await Promise.all(
-    files.map((file) => uploadToCloudinary(file, folder).catch((err) => {
-      console.error(`Failed to upload file: ${file.name}`, err);
-      return null;
-    }))
-  );
-  return results.filter((url): url is string => url !== null);
+    files.map((file) =>
+      uploadToCloudinary(file, folder).catch((err) => {
+        console.error(`Failed to upload file: ${file.name}`, err)
+        return null
+      }),
+    ),
+  )
+  return results.filter((url): url is string => url !== null)
 }
+
+export { UPLOAD_PRESET }

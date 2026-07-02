@@ -71,15 +71,18 @@ export function ProductCard({ item, businessName, compared, promotion, onCompare
         e.stopPropagation();
         const bName = businessName || (item as any).stores?.name || 'Commerce';
         const hasDiscount = !!promotion?.discount_percent;
+        const safePrice = Number(item.price ?? 0);
         const discountedPrice = hasDiscount
-            ? item.price * (1 - (promotion.discount_percent! / 100))
-            : item.price;
+            ? safePrice * (1 - (promotion.discount_percent! / 100))
+            : safePrice;
+
 
         addItem({
             id: item.id.toString(),
             name: item.name,
-            price: item.price,
+            price: safePrice,
             discountedPrice: hasDiscount ? discountedPrice : undefined,
+
             image: item.main_image,
             quantity: 1,
             store_id: item.store_id?.toString() || '',
@@ -116,9 +119,10 @@ export function ProductCard({ item, businessName, compared, promotion, onCompare
     const style = categoryStyles[typeKey] || categoryStyles.other;
 
     const hasDiscount = !!promotion?.discount_percent;
+    const safePrice = Number(item.price ?? 0);
     const discountedPrice = hasDiscount
-        ? item.price * (1 - (promotion.discount_percent! / 100))
-        : item.price;
+        ? safePrice * (1 - (promotion.discount_percent! / 100))
+        : safePrice;
 
     return (
         <div
@@ -200,7 +204,7 @@ export function ProductCard({ item, businessName, compared, promotion, onCompare
                     </span>
                     {hasDiscount && (
                         <span className="text-sm font-medium text-zinc-500 line-through">
-                            {item.price.toLocaleString()} DT
+                            {safePrice.toLocaleString()} DT
                         </span>
                     )}
                 </div>
